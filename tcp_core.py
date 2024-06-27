@@ -1,8 +1,8 @@
+import json
 import asyncio
 import socket
-import sys
-import time
-import ollama
+
+from dataclasses import dataclass
 from ollama import AsyncClient
 
 # Tcp Server to receive and pass out the llm response
@@ -13,7 +13,6 @@ class TcpServer:
         self.server = None
 
     async def handle_client(self, reader, writer):
-        addr = writer.get_extra_info('peername')
         print("msg received")
 
         buffer = bytearray()
@@ -29,41 +28,18 @@ class TcpServer:
 
         # Interpret the User's Prompt and remove the unique terminator
         msg = buffer.decode()
-        print("received this: ", msg)
+        #print("received this: ", msg)
         msg = msg[:-len(substring)]
+
+        data = json.loads(msg)
 
         # Disabling Nagle's algorithm for the socket
         writer.get_extra_info('socket').setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-
-        async for part in await AsyncClient().chat(model='phi3:mini', messages=[
-                {
-                    "role": "user",
-                    "content": msg
-                }
-            ], stream=True):
+        async for part in await AsyncClient().chat(model='phi3:3.8b-mini-4k-instruct-q8_0', messages=data, stream=True):
             writer.write(part['message']['content'].encode('utf-8'))
             await writer.drain()
             print(part['message']['content'], end='', flush=True)
-
-        # # Send the Query to the phi3:mini LLM Model and retrieve
-        # # a dynamically updated stream
-        # stream = ollama.chat(
-        #     model="phi3:mini",
-        #     messages=[
-        #         {
-        #             "role": "user",
-        #             "content": msg
-        #         }
-        #     ],
-        #     stream=True
-        # )
-
-        # # Write out the stream back to the client
-        # for chunk in stream:
-        #     writer.write(chunk['message']['content'].encode('utf-8'))
-        #     await writer.drain()
-        #     print(chunk['message']['content'], flush=True)
 
         writer.close()
         await writer.wait_closed()
