@@ -1,16 +1,18 @@
 import json
 import asyncio
 import socket
-
-from dataclasses import dataclass
+import sys
+import re
 from ollama import AsyncClient
 
 # Tcp Server to receive and pass out the llm response
 class TcpServer:
-    def __init__(self, host, port):
+    def __init__(self, host, port, ollama_port):
         self.host = host
         self.port = port
+        self.ollama_port = ollama_port
         self.server = None
+        print("Host: ", host, "  |  Port: ", port)
 
     async def handle_client(self, reader, writer):
         print("msg received")
@@ -35,11 +37,13 @@ class TcpServer:
 
         # Disabling Nagle's algorithm for the socket
         writer.get_extra_info('socket').setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-
-        async for part in await AsyncClient().chat(model='phi3:3.8b-mini-4k-instruct-q8_0', messages=data, stream=True):
+        host_string = "localhost:" + self.ollama_port
+        async_client = AsyncClient(host=host_string)
+        # hermes2-llama3:8b
+        async for part in await async_client.chat(model='tinyllama:1.1b-chat-v0.6-q6_K', messages=data, stream=True):
             writer.write(part['message']['content'].encode('utf-8'))
             await writer.drain()
-            print(part['message']['content'], end='', flush=True)
+            #print(part['message']['content'], end='', flush=True)
 
         writer.close()
         await writer.wait_closed()
@@ -51,5 +55,17 @@ class TcpServer:
             await self.server.serve_forever()
 
 if __name__== "__main__":
-    svr = TcpServer("localhost", 7060)
+    print("Server started")
+    def validate_ip(ip):
+        ip_pattern = r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+        if re.match(ip_pattern, ip):
+            return True
+        return False
+    if validate_ip(sys.argv[1]):
+        print("Valid IP address")
+    else:
+        print("Invalid IP address", sys.argv[1])
+        exit()
+
+    svr = TcpServer(sys.argv[1], sys.argv[2], sys.argv[3])
     asyncio.run(svr.run())
