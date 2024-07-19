@@ -39,11 +39,19 @@ class TcpServer:
         writer.get_extra_info('socket').setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         host_string = "localhost:" + self.ollama_port
         async_client = AsyncClient(host=host_string)
-        # hermes2-llama3:8b
+
+        # tinyllama:1.1b-chat-v0.6-q6_K
+        # llama3:8b-instruct-q6_K
         async for part in await async_client.chat(model='tinyllama:1.1b-chat-v0.6-q6_K', messages=data, stream=True):
             writer.write(part['message']['content'].encode('utf-8'))
             await writer.drain()
             #print(part['message']['content'], end='', flush=True)
+        
+        token_count = part['eval_count']
+        time_ns = part['eval_duration']
+        print("Tokens per second: ", int(token_count) / (float(time_ns) / (1 * 10**9)))
+        print("Token Count: ", int(token_count))
+        print("Time (s): ", int(time_ns) / (1 * 10**9))
 
         writer.close()
         await writer.wait_closed()
