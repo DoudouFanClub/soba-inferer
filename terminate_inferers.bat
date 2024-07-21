@@ -1,6 +1,6 @@
 @echo off
 
-:: Launch 3 python inferer servers
+:: Launch 3 python3 inferer servers
 taskkill /IM python.exe /F
 
 :: Wait a moment to ensure both Services start

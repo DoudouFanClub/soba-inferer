@@ -3,7 +3,10 @@ import asyncio
 import socket
 import sys
 import re
+import os
 from ollama import AsyncClient
+from sentence_transformers import SentenceTransformer
+from custom_embedder import GenerateAllEmbeddings, KnnSearch
 
 # Tcp Server to receive and pass out the llm response
 class TcpServer:
@@ -12,6 +15,8 @@ class TcpServer:
         self.port = port
         self.ollama_port = ollama_port
         self.server = None
+        self.model = None
+        self.embeddings = None
         print("Host: ", host, "  |  Port: ", port)
 
     async def handle_client(self, reader, writer):
@@ -27,12 +32,21 @@ class TcpServer:
             buffer.extend(data)
             if substring in string_value:
                 break
-
+        
         # Interpret the User's Prompt and remove the unique terminator
         msg = buffer.decode()
-        #print("received this: ", msg)
         msg = msg[:-len(substring)]
+        msg = msg[1:]
+        # need to find a way to extract the latest question
+        question_embedding = model.encode(["who is king ryan of ryry land?"])   
+        best_matches = KnnSearch(question_embedding, all_embeddings, k=5) # Play with this value, higher seems to result in inaccurate results
 
+        sourcetext = ""
+        for i, (index, source_text) in enumerate(best_matches, start=1):
+            sourcetext += f"{i}. Index: {index}, Source Text: {source_text}"
+        
+        sys_prompt_str = '[{"role": "system", "content": "Use this information if you are unable to provide an answer:' + sourcetext + '"},'
+        msg = sys_prompt_str + msg
         data = json.loads(msg)
 
         # Disabling Nagle's algorithm for the socket
@@ -42,7 +56,7 @@ class TcpServer:
 
         # tinyllama:1.1b-chat-v0.6-q6_K
         # llama3:8b-instruct-q6_K
-        async for part in await async_client.chat(model='tinyllama:1.1b-chat-v0.6-q6_K', messages=data, stream=True):
+        async for part in await async_client.chat(model='llama3:8b-instruct-q6_K', messages=data, stream=True):
             writer.write(part['message']['content'].encode('utf-8'))
             await writer.drain()
             #print(part['message']['content'], end='', flush=True)
@@ -64,6 +78,7 @@ class TcpServer:
 
 if __name__== "__main__":
     print("Server started")
+    model = SentenceTransformer('all-MiniLM-L6-v2')
     def validate_ip(ip):
         ip_pattern = r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
         if re.match(ip_pattern, ip):
@@ -74,6 +89,8 @@ if __name__== "__main__":
     else:
         print("Invalid IP address", sys.argv[1])
         exit()
-
     svr = TcpServer(sys.argv[1], sys.argv[2], sys.argv[3])
+    svr.model = model
+    all_embeddings = GenerateAllEmbeddings(os.path.dirname(__file__) + '\\compressed\\', model)
+    svr.embeddings = all_embeddings
     asyncio.run(svr.run())
