@@ -1,5 +1,4 @@
 import os
-import pymupdf
 import ollama
 import numpy as np
 from sentence_transformers import SentenceTransformer
@@ -89,5 +88,7 @@ if __name__ == "__main__":
     all_embeddings = GenerateAllEmbeddings(os.path.dirname(__file__) + '\\compressed\\', model)
 
     while True:
-        user_prompt = input('Ask the model a question: ')
+        user_prompt = input('Ask the model a question (or /bye): ')
+        if (user_prompt == '/bye'):
+            break
         MakeQuery(user_prompt, all_embeddings, model)

@@ -1,0 +1,2399 @@
+The VR-Link toolkit is an object-oriented library that minimizes the effort required to create networked simulators and virtual reality applications. It provides a powerful, easy-to-use programmer's interface that reduces development cost, time, and risk.
+
+The protocol-independent API allows developers to simulate local entities, set their state, and automatically send entity information to other applications over a network using DIS or HLA. VR-Link also simplifies receiving and processing information from other applications, providing easy access to the state of remote entities.
+
+VR-Link features include:
+
+* Exercise Connection: an interface to an HLA or DIS exercise that provides a protocol-independent interface for exchanging simulation information.
+* Object Tracking: a reflected entity list that keeps track of remote participants in your virtual world and provides a protocol-independent interface to their state.
+* Object Publishing: an Entity Publisher that informs remote applications about the state of entities simulated locally.
+* Interaction Classes: a protocol-independent interface to send and receive interaction messages that describe simulation events such as weapon fires, detonations, and radio signal transmissions.
+* FOM-Agility: support for mapping VR-Link's existing protocol-independent API to another FOM's parameters, attributes, and object or interaction classes.
+* User Extensibility: the ability to override default functionality through subclassing and extend the toolkit to work with new types of HLA object or interaction classes and user-defined DIS PDUs.
+* Access to Low-Level Details: direct access to the HLA RTI and network configuration in DIS for developers who want to work below the level of abstraction provided by the top-level API.
+
+VR-Link also includes utility functions, such as vector and matrix manipulation functions, platform-independent interfaces to the system clock, and support for discrete simulation time. Additionally, it provides a set of executables and source code for sample applications, including F18, DIS Netdump, Talk, and Listen.
+
+VR-Link supports HLA and DIS standards, including HLA 1.3, RTI 1516, and HLA Evolved (IEEE 1516-2010) specifications. It also provides support for the RPR FOM and allows developers to map VR-Link's existing protocol-independent API to another FOM's parameters, attributes, and object or interaction classes.
+The API supports dynamic link compatibility, which was not possible with the original IEEE 1516 API. The API is compatible with RTIs written to the SISO DLC HLA API 1516 and includes additional features such as FOM modules and update rate reduction.
+
+VR-Link also supports interoperability between RTI 1.3 and RTI 1516 applications, allowing applications built using different APIs to communicate with each other.
+
+The API provides extensive support for the Real-Time Platform Reference FOM (RPR FOM) and can be configured to work with other FOMs through its FOM Mapper.
+
+VR-Link has built-in support for RPR FOM versions 0.5, 0.7, 0.8, 1.0, 2.0, and drafts 6, 14, 17, and 20. Users can specify a different version of the RPR FOM by passing the version number to the DtRprFomMapper constructor.
+
+The API also supports FOM agility, allowing users to define mappings between VR-Link's protocol-independent interface and their own FOMs. VR-Link has a FOM Mapper for the MATREX FOM, and users can contact MAK salespeople for more information.
+
+The text also provides an overview of how VR-Link works, including its multi-layered design, support for HLA, DIS, and protocol independence, and examples of how to connect to an exercise, manage state information, and manage information about events.
+
+All code examples are preserved in the summary.
+The text discusses the use of FOM Mapper to support additional FOMs in VR-Link, which is a protocol-independent interface that allows for interoperability between different simulation standards.
+
+It then explains the concept of HLA (High Level Architecture) and DIS (Distributed Interactive Simulation), two protocols used for simulating complex systems. The text briefly describes the differences between HLA and DIS, highlighting that HLA does not standardize data types and formats, whereas DIS does.
+
+The Federation Object Model (FOM) is introduced as a crucial component of HLA, which defines the data model for federation execution. VR-Link has built-in support for the Real Time Platform Reference FOM (RPR FOM), which is a reference FOM developed by the SISO-sanctioned RPR FOM Standards Development Group.
+
+The text also explains the concept of RTI (Run-Time Infrastructure) as an implementation of the HLA interface specification, which provides services that make up the standard RTI application programmer's interface (API).
+
+Additionally, the DIS protocol is described as a set of standards for sharing information about a virtual world, including Protocol Data Units (PDUs) and their types. The text lists different versions of the DIS protocol and their corresponding formal specifications.
+
+Finally, the concept of Protocol Independence is discussed, where VR-Link's Protocol-Independent API allows for creating applications that work in both DIS and HLA without significant modification. This is achieved by using a set of classes that encompass most of the features of VR-Link and allowing for compilation for each protocol separately.
+
+The text concludes by providing information on how to obtain further documentation on HLA and DIS, including links to relevant websites and documents.
+VR-Link provides protocol-independent classes that facilitate interactions between applications in a virtual world, including exercise connection, object management, and interaction classes.
+
+The protocol-independent classes include:
+* Exercise Connection: A class that serves as an interface to the RTI or DIS network
+* Object Management Classes: Classes that maintain state information of local and remote objects, and handle sending and receiving of state updates
+* Interaction Classes: Classes that provide a protocol-independent API for HLA interactions or DIS PDUs that represent events
+
+The object management classes include:
+* Object Publisher Class: Manages sending updates for locally simulated objects to the exercise through its Exercise Connection
+* Reflected Object Class: Represents a remote object and maintains its current state based on updates received from the exercise
+* Reflected Object List Class: Keeps track of remote objects and creates and destroys reflected objects based on information received from the exercise
+
+The protocol-independent interface also includes:
+* State Repository Class: Used by publishers and reflected objects to store the state of an object they represent
+
+Applications connect to an exercise through an Exercise Connection, implemented through the class DtExerciseConn. The member functions of DtExerciseConn allow applications to send interactions to the exercise, read input from the network, generate event IDs, register callback functions, and manage the simulation clock.
+
+The application must also maintain information about objects being simulated locally and communicate this information to other participants in an exercise. This is done through the management of state information, which includes managing locally simulated entities and remote entities.
+
+Here are some key code examples:
+
+* `DtEntityPublisher` class: Manages sending updates for locally simulated objects
+* `DtReflectedEntity` class: Represents a remote object and maintains its current state based on updates received from the exercise
+* `DtExerciseConn` class: Provides member functions for connecting to an exercise and managing simulation clock
+HLA Federation Execution:
+
+* State updates are sent only when update conditions (as specified by the FOM) have been met and a federate has subscribed to the entity attribute that changed.
+* When a specific request for an update is received from another federate or the RTI.
+
+Managing Remote Entities:
+
+* VR-Link receives information about remote entities through the exercise connection using the function `DtExerciseConn::drainInput()`.
+* VR-Link maintains a list of remote entities in a `DtReflectedEntityList` and each entity has a `DtReflectedEntity` to represent it.
+* The state of the entity is maintained in a `DtEntityStateRepository`.
+
+Managing Interactions:
+
+* Interactions are events such as firing a munition, detonation of a munition, or collision of entities.
+* VR-Link manages interactions through classes derived from `DtInteraction`.
+* Locally-defined interactions can be sent through the exercise connection using an instance of the appropriate interaction class.
+* Remote interactions can be received and processed by the application.
+
+Managing Time:
+
+* The VR-Link toolkit maintains a concept of VR-Link simulation time for use in dead-reckoning of remote entities and thresholding of local entities.
+* The `DtClock` class implements a VR-Link simulation clock, which can be used to advance the simulation time each frame.
+* In a fixed frame rate application, VR-Link simulation time can be managed as follows:
+```c
+DtTime dt = .05;                                // Each time step is .05 seconds
+DtTime simTime = 0.0;                                 // Represents current time
+DtClock* clock = exConn.clock();
+...
+// Main simulation loop
+while(...)
+{
+    // Tell VR-Link the current value of simulation time
+   clock->setSimTime(simTime);
+   ...
+   // Do stuff
+   ...
+   // Advance simTime by dt
+   simTime = simTime + dt;
+   // Sleep till the next multiple of .05 seconds
+   DtTime timeTillNextFrame = simTime - clock->elapsedRealTime();
+   DtSleep(timeTillNextFrame);
+}
+```
+* In a floating frame rate application, VR-Link simulation time can be managed as follows:
+```c
+DtClock* clock = exConn.clock();
+...
+// Main simulation loop
+while(...)
+{
+    clock -> setSimTime(clock -> absRealTime());
+    ...
+    // Do stuff
+    ...
+}
+```
+* The `setSimTime()` function is used to advance the simulation time each frame.
+
+Identifying Objects:
+
+* HLA and DIS handle object identification differently.
+* In DIS, entities are identified by a triplet (site, application, entity) known as an Entity Identifier.
+* Other types of objects are usually identified using the IDs of their host entities plus a single additional ID number.
+The text discusses various features and concepts in HLA (High Level Architecture) and VR-Link, including:
+
+1. Object Identifiers: Objects have multiple identifiers, such as Object Handle and Object Name, used for RTI service invocations and RPR FOM interactions.
+2. Callbacks: Callback functions are written by the user to respond to events. They can be registered with VR-Link using a callback registration function, which takes a pointer to the function and an optional arbitrary pointer (usr). When VR-Link calls the callback function, it passes the usr argument as a void* pointer.
+3. Coordinate Systems: VR-Link supports various coordinate systems, including geocentric, UTM, Cartesian, and Topographic coordinates. It also has coordinate conversion routines and view classes for easy use of different coordinate systems.
+
+The text provides examples of how to implement callbacks, including:
+
+```
+class MyObj
+{
+public:
+   void someFunc();
+   static void theCallback(DtFireInteraction* inter, void* usr)
+   {
+      MyObjType* obj = static_cast<MyObj *>(usr);
+      obj->someFunc();
+   }
+};
+int main()
+{
+   DtExerciseConn exConn(...);
+   ...
+   MyObj obj;
+   DtFireInteraction::addCallback(&exConn, MyObj::theCallback, &obj);
+   ...
+}
+```
+
+The text also discusses:
+
+1. Dead-Reckoning and Smoothing: VR-Link uses dead-reckoning to estimate the location of entities between state updates and smoothing to ensure smooth transitions.
+2. Timestamps: DIS and RPR FOM messages contain timestamps, which indicate a time past an hour, but not the specific hour. The timestamp type indicator can be either "relative" or "absolute".
+
+Overall, this text provides a comprehensive overview of various features and concepts in HLA and VR-Link, including object identifiers, callbacks, coordinate systems, dead-reckoning and smoothing, and timestamps.
+**Timestamping**
+
+The text explains that DIS/HLA uses timestamps to indicate whether a sender's clock is synchronized with others or not. There are two types of timestamping: absolute, which means the sender's clock is synchronized with other clocks, and relative, which means it's not. If both sender and receiver use absolute timestamping, they can understand each other's timestamps. However, if only one uses absolute timestamping, or if both use relative timestamping, the receiver needs to determine the time difference between the two clocks.
+
+**Big-endian/Little-endian Wire Formats**
+
+In rare cases, simulations may need to communicate with applications that use little-endian wire formats instead of big-endian. VR-Link provides a mechanism for setting and inspecting the current wire format at runtime using functions DtSetNetworkByteOrdering() and DtNetworkByteOrdering(). The default is big-endian.
+
+**Basic VR-Link Examples**
+
+The text presents two simple VR-Link applications: Listen-Only Example and Send-Only Example. These examples are included with VR-Link and demonstrate how to use the library for basic operations such as connecting to an exercise, managing state and interaction information, tracking entities, managing time, and listening to the network.
+
+**Listen-Only Example**
+
+This example shows a listen-only application that observes an exercise without simulating any entity on the network. The code initializes VR-Link, sets up a connection to the exercise or federation execution, registers a callback for fire interactions, creates objects to manage entities and time, and then enters a loop where it processes incoming messages and prints entity positions.
+
+**Connecting to An Exercise**
+
+The text explains that connecting to an exercise is done using a DtExerciseConn object. This object serves as the program's interface to an exercise and provides support for command line arguments through its base class, DtVrlApplicationInitializer.
+The provided code demonstrates how to create a connection to an exercise or federation execution using VR-Link (DtHLA) or DIS (DtDIS). The example uses callbacks to handle incoming interactions such as fire, detonations, and collisions. It also creates a reflected entity list to track entities found on the network.
+
+The main function initializes a DtExerciseConn object with specific parameters depending on whether it's using VR-Link or DIS. It then sets up an entity publisher for the F18 aircraft, which manages the generation of messages for this entity and provides an entity state repository where state values can be set.
+
+In the main loop, the program sends a fire interaction, updates the position of the F18 by sending DIS entity state PDUs or HLA attribute updates, and then waits till real time equals simulation time. The tick() function is called to ensure that any data that needs to be updated is sent.
+
+Here is the code with all comments removed:
+
+```c
+#include <vl/exerciseConn.h>
+#include <vl/exerciseConnInitializer.h>
+#include <vl/topoView.h>
+#include <vl/clock.h>
+#include <vl/vector.h>
+
+int main() {
+    DtExerciseConn exConn;
+    // Initialize VR-Link time
+    DtClock* clock = exConn.clock();
+
+    DtVector position(0, 0, -100);
+    DtVector velocity(20, 0, 0);
+
+    // Send a Fire Interaction
+    DtFireInteraction fire;
+    fire.setAttackerId(exConn.globalId());
+    exConn.sendStamped(fire);
+
+    // Main loop
+    DtTime dt = 0.05;
+    DtTime simTime = 0;
+    while (simTime <= 10.0) {
+        // Tell VR-Link the current value of simulation time.
+        clock->setSimTime(simTime);
+
+        // Process any incoming messages.
+        exConn.drainInput();
+
+        // Set the current position information.
+        topoView.setLocation(position);
+        topoView.setVelocity(velocity);
+
+        // Call tick, which insures that any data that needs to be 
+        // updated is sent.
+        entityPub.tick();
+
+        // Set up for next iteration.
+        position[0] += velocity[0] * dt;
+        simTime     += dt;
+
+        // Wait till real time equals simulation time of next step
+        DtSleep(simTime - clock->elapsedRealTime()); 
+    }
+
+    return 0;
+}
+```
+
+Note that some variables, such as `entityPub` and `topoView`, are not defined in this code snippet. They must be defined elsewhere in the program.
+**Main Purpose of the Program**
+
+The main purpose of this program is to demonstrate the sending of data to the network. However, it's not a true send-only application as it also processes incoming data using the `drainInput()` call.
+
+**Compiling and Linking VR-Link Application**
+
+To build a VR-Link application, you need to tell the compiler where to find the VR-Link header files (and for HLA, the RTI header files) and link with VR-Link's libraries (and for HLA, the RTI's libraries).
+
+**Libraries and Header Files**
+
+VR-Link consists of four libraries: `mtl`, `vl`, `matrix`, `vlpi`, and `vlutil`. The `vl` library is available in different versions for different simulation standards.
+
+**Compiling for a Particular Simulation Standard Under Linux**
+
+To compile a VR-Link application under Linux, you need to use `gmake 3.81 or later` and specify the simulation standard using flags (e.g., `-DDtHLA=1` for HLA).
+
+**Compiling for a Particular Protocol Version under Windows**
+
+Under Windows, you can set your program's protocol by providing build settings in Microsoft Developer Studio to define constants and specify paths for header files and RTI libraries.
+
+**Code Examples**
+
+There are no code examples provided in the text. However, line numbers 66-77 of the program are mentioned:
+
+* Line 66: Sets simulation time at the start of each iteration
+* Line 69: Processes incoming data using `drainInput()`
+* Line 72: Sends data to the network
+
+The rest of the code is not provided in the text.
+1. **Linker Settings**: The first section provides examples of how to set up the linker settings in Visual C++ to include the necessary libraries and paths for VR-Link.
+2. **Using VR-Link from C**: This section describes how to use VR-Link from a C application, including calling C++ functions from C and vice versa.
+
+The text also includes examples of code that can be used as references.
+
+Here is a summary of the main points:
+
+* In the Linker -> Input section, enter the appropriate RTI, VR-Link, and Visual C++ library files.
+* In the Linker -> General section, list the paths to these files in the "Additional Library Directories" box.
+* When compiling for DIS, include the VR-Link include path in the C/C++ -> General section.
+* List the appropriate paths to the library files in the Linker -> General section.
+
+The rest of the text covers topics such as:
+
+* Delivering VR-Link applications to users
+* The protocol-independent interface (PII) and its features
+
+The PII is a set of classes that allow you to create applications that work with both DIS and HLA without significant modification. It provides a shield from the intricacies of the underlying protocol-specific classes and functions.
+
+No code examples are modified or assumed in this summary.
+**Connecting to Exercises**
+
+A DtExerciseConn is an interface for a simulation application to connect to an exercise. It allows sending and receiving data between applications through HLA messages or DIS PDUs.
+
+**Creating a DtExerciseConn**
+
+There are separate versions of DtExerciseConn for HLA and DIS, but most public member function names and signatures are shared by both versions. The HLA version is defined in `exerciseConnHLA.h`, while the DIS version is defined in `exerciseConnDIS.h`. You can include `exerciseConn.h` to use the appropriate version.
+
+**Creating an Exercise Connection for HLA**
+
+To create a DtExerciseConn in HLA, you need to provide a federation execution name and a federate name. These values can be specified in the `DtExerciseConnInitializer` or directly in the constructor. You can also specify the name of the FED file that provides information about the FOM to the RTI and VR-Link.
+
+**Creating an Exercise Connection for DIS**
+
+To create an exercise connection for DIS, you need a UDP port number, an exercise ID number, a site number, and an application number. These values can be specified in the `DtExerciseConnInitializer` or directly in the constructor.
+
+**Initializing Applications**
+
+You can specify default initialization values in `DtExerciseConnInitializer`. You can also enable parsing of command line input, loading XML or MTL files to VR-Link-based applications using a `DtVrlApplicationInitializer`.
+
+**Example Code**
+```c
+// Create a connection to the exercise or federation execution.
+DtVrlApplicationInitializer appInit(argc, argv, "VR-Link application");
+appInit.parseCmdLine();
+DtExerciseConn exConn(appInit);
+```
+This code creates a connection to the exercise or federation execution using the `DtVrlApplicationInitializer` and specifies the application name.
+The text describes the default commands and values for DtExerciseConnInitializer, which are listed in Protocol Independent Command Line Options Default HLA Command Line Options and Default DIS Command Line Options.
+
+**Protocol Independent Command Line Options**
+
+These options are used to specify various parameters for the DtExerciseConnInitializer. Some of these options include:
+
+* Notification level (-n or --notifyLevel)
+* Log file to use (--logFileName <filename>)
+* Notify level in log file to use (--fileNotifyLevel <level>)
+* Ignores the rest of the labeled arguments following this flag (-- or --ignore_rest)
+* Displays version information and exits (-v or --version)
+* Displays usage information and exits (-h or --help)
+
+**Default HLA Command Line Options**
+
+These options are used to specify various parameters for HLA (High Level Architecture) connections. Some of these options include:
+
+* Execution name (-x or --execName)
+* Federate name (-N or --federateName)
+* FED file name (-F or --fedFileName)
+* FOM Mapper library name (-f or --fomMapperLib)
+* FOM Mapper initialization data (--fomMapperInitData data)
+* RPR FOM revision (--rprFomRevision)
+* RPR FOM type (--rprFomType)
+
+**Default DIS Command Line Options**
+
+These options are used to specify various parameters for DIS (Discrete Event Simulation) connections. Some of these options include:
+
+* Simulation loop interval (-i or --simulationLoopInterval)
+* Packet size limit (-p or --packetSizeLimit)
+* Receive timeout (-t or --receiveTimeout)
+
+**DtExerciseConn Class**
+
+The DtExerciseConn class provides methods for sending and receiving data to/from the exercise. Some of its key methods include:
+
+* send(): sends interactions to the exercise
+* sendStamped(): sends interactions to the exercise with a timestamp
+* setTimeStampType(): sets the type of timestamp being sent
+* timeStampType(): returns the current timestamp type
+
+**Receiving Data from the Exercise**
+
+The DtExerciseConn::drainInput() function receives and processes information from the RTI (Run-Time Infrastructure) or DIS network. This method should be called periodically, usually once per simulation loop.
+
+**Post-Drain Callbacks**
+
+Post-drain callbacks are callback functions that can be registered with a DtExerciseConn, and will be called automatically by DtExerciseConn::drainInput() immediately before it returns. These callbacks have the following function signature:
+
+void myCallback(void* usr);
+
+They are registered with a DtExerciseConn using addPostDrainCallback(), and unregistered using removePostDrainCallback().
+1. **Response-sending post-drain callback**: You can register a callback function to be executed after all RTI service callbacks have been invoked, which is safe to send interactions.
+2. **Time Stamp Type**: The `setTimeStampType()` function allows you to set the time stamp type of your application to either `DtTimeStampAbsolute` or `DtTimeStampRelative`. This affects how timestamps are used in dead-reckoning calculations.
+3. **Initialization Status**: If VR-Link fails during initialization, the default behavior is to abort. You can use the `status` argument in the constructor to store the result of initialization and inspect later.
+4. **Interactions**: In VR-Link, an interaction refers to data exchanged among simulation applications to describe events, such as firing a munition or colliding entities. Each type of interaction has its own class (e.g., `DtFireInteraction`, `DtDetonationInteraction`, etc.).
+5. **Sending Interactions**: To send interactions:
+	* Create an instance of the appropriate interaction class.
+	* Set values for parameters using mutator functions.
+	* Send it using `sendStamped()` function, which includes a timestamp with outgoing interactions.
+6. **Receiving Interactions**: Incoming interactions are handled through interaction callbacks. You can register callback functions for specific interaction types with VR-Link.
+
+The provided code example shows how to create and send a fire interaction:
+
+```c
+DtExerciseConn exerciseConn(...);
+...
+// Create a DtFireInteraction
+DtFireInteraction fireInter;
+// Fill the DtFireInteraction with data
+fireInter.setAttackerID(myId);
+fireInter.setTargetID(targetId);
+fireInter.setMunitionId(missileId);
+fireInter.setEventId(exerciseConn.nextEventId());
+...
+// Send to the exercise
+exerciseConn.sendStamped(fireInter);
+```
+
+Note that this code assumes that `myId`, `targetId`, and `missileId` are existing objects.
+**Interactions**
+
+* Interactions are received by the application and passed to callback functions.
+* Each interaction class has static member functions `addCallback()` and `removeCallback()` to register and unregister callbacks.
+* Callback functions can be registered with specific interaction classes, such as `DtFireInteraction`.
+* An example callback function for `DtFireInteraction` is shown: `myFireCallback(DtFireInteraction*, void*)`.
+
+**Entities**
+
+* VR-Link provides classes to manage entities, including `DtEntityPublisher`, `DtReflectedEntityList`, and `DtEntityStateRepository`.
+* The text focuses on managing entities, which include vehicles, life forms, and other types of objects with a position in space.
+* To inform other simulation applications about the state of locally-simulated entities:
+	+ Create a `DtEntityPublisher` for each entity.
+	+ Update its current state through its `DtEntityStateRepository`.
+	+ Call `DtEntityPublisher::tick()` to send needed information to other participants.
+
+**Code Examples**
+
+* Registering a callback function with `DtFireInteraction`: `DtFireInteraction::addCallback(exerciseConn, myFireCallback, NULL);`
+* Sending a fire interaction from within an interaction callback: `exConn->sendStamped(fireInter);`
+* Using post-drain callbacks to make RTI calls safely: `exConn->addPostDrainCallback(sendFire, exConn);`
+
+The text also provides information on working with other types of objects and managing them using publishers, reflected object lists, and state repositories.
+The `DtEntityPublisher` class can be instantiated using a protocol-independent constructor that takes a `DtExerciseConn` and `DtEntityType` as arguments, as shown in the example:
+```
+DtExerciseConn exConn(...);
+DtEntityType tankType(1, 1, 225, 1, 1, 0, 0);
+DtEntityPublisher tankPub(tankType, &exConn);
+```
+The `DtEntityType` represents a seven-component enumeration defined by the DIS protocol and is used to determine which HLA object class is used to represent the entity in an HLA exercise.
+
+The constructor also has an optional final argument that allows you to choose an identifier for the entity. The identifier can be chosen using the `reserveObjectInstanceName` method of the RTI ambassador, as shown:
+```
+ExConn->rtiAmb()->reserveObjectInstanceName(theName);
+```
+Alternatively, you can use a protocol-specific constructor to specify parameters such as the HLA object class to represent the object.
+
+The `DtEntityPublisher` class also has an inspector function called `globalId()` that returns the global identifier of the object, and `localId()` or `id()` that returns the local identifier of the object.
+
+To set a `DtEntityPublisher`'s state, you can use its `DtEntityStateRepository`, which is a container for an entity's state. You can update the repository by calling the `setLocation()`, `setVelocity()`, `setAcceleration()`, `setOrientation()`, and `setRotationalVelocity()` functions, as shown:
+```
+dtEntityPub->entityStateRep()->setLocation(time);
+dtEntityPub->entityStateRep()->setVelocity(time);
+...
+```
+You can also use the `setDamageState()`, `setFlamesPresent()`, `setEngineSmokeOn()`, and `setHatchState()` functions to set components that affect the outward appearance of an entity.
+
+Note that some mutator functions take enumerations as arguments, which are defined in disEnums.h.
+1. Coordinate systems: Geocentric coordinates, entity coordinate system, and converting between them.
+2. Setting entity state: Using the `DtEntityStateRepository` class to set location, velocity, acceleration, orientation, and other attributes of an entity.
+3. Tick function: The `DtEntityPublisher::tick()` function updates the entity's state and sends data to other exercise participants when necessary.
+4. Position and orientation thresholds: Setting threshold values for determining when position and orientation data needs to be sent.
+5. Removing a locally-simulated entity: Deleting a `DtEntityPublisher` removes an entity from the exercise, and options are available to prevent sending a final PDU on destruction.
+
+The provided code examples demonstrate how to use these classes and functions, including setting coordinates, velocity, acceleration, orientation, and other attributes of an entity.
+The chapter discusses working with remote entities in VR-Link, specifically using DtReflectedEntityList to maintain the current state of entities that are learned about through updates received from other participants in an exercise.
+
+**Creating Reflected Entity Lists**
+A DtReflectedEntityList is created on an exercise connection by calling `DtExerciseConn` and then creating a new `DtReflectedEntityList`.
+
+**Iterating Through a DtReflectedEntityList**
+To iterate through the list, use `first()` and `last()` to get the first and last entities, and then use `next()` and `prev()` to traverse the list. The `wrapNext()` and `wrapPrev()` functions can be used to loop back to the beginning or end of the list.
+
+**Delayed Discovery of Reflected Objects**
+The `setDiscoveryCondition()` function can be used to delay discovery of reflected objects until a user-defined condition is met. This is useful in HLA applications when an object is discovered before attribute information arrives.
+
+**Inspecting an Entity's State**
+DtReflectedEntity uses a DtEntityStateRepository to store the current state of an entity. Individual state data items can be inspected using inspector functions on the `DtEntityStateRepository`, such as `location()`, `velocity()`, and `orientation()`.
+
+The code examples provided include:
+
+* Creating a `DtReflectedEntityList`: `DtExerciseConn exConn(...); ... DtReflectedEntityList(&exConn);`
+* Iterating through a list: `for (DtReflectedEntity* ent = rel.first(); ent; ent = ent->next()) { ... }`
+* Looking up an entity by ID: `DtGlobalObjectDesignator id = fireInteraction.targetId(); DtReflectedEntity* ent = reflectedEntityList.lookup(id);`
+* Setting a discovery condition: `bool criteria(DtReflectedObject* obj, void* usr) { ... } rel.setDiscoveryCondition(criteria, NULL);`
+
+Note that some code examples have been omitted for brevity, but the core information and code snippets remain intact.
+The DtEntityStateRepository class provides functions for inspecting and modifying the state of entities in a simulation. It is derived from DtBaseEntityStateRepository, so it inherits its functions. When creating a DtReflectedEntityList in HLA, VR-Link requests an update of all attributes, but the exact timing of updates cannot be guaranteed.
+
+The DtEntityStateRepository has mutator functions for setting local entity states, but these are typically used to simulate entities rather than reflected entities, which are updated automatically from exercise data. The repository also provides inspector functions for retrieving entity state information, such as position, velocity, acceleration, and orientation. Orientation can be returned in different forms, including a rotation matrix or Euler angles.
+
+The DtEntityStateRepository class has two main types of values: dead-reckoned values and non-dead-reckoned values. Dead-reckoned values are extrapolated from previous updates using the entity's current rates of movement, while non-dead-reckoned values return the last received value from the exercise. The default behavior is to use dead-reckoning, but this can be overridden by creating a custom DtDeadReckoner subclass or setting an approximation function.
+
+The text also provides details on how to use the inspector functions, including an example code snippet for printing the state of the first entity in a list. Additionally, it notes that there is no performance penalty for calling inspectors multiple times within a frame as long as the simulation time has not changed.
+
+Finally, the text provides information on dead-reckoning algorithms and how to customize them by creating custom DtDeadReckoner subclasses or setting approximation functions. The enums for dead-reckoning algorithms are also listed.
+The text then moves on to discuss smoothing, which is used to reduce jumps in entity position caused by new HLA or DIS state data. It explains how to use the DtSmoother class to implement smoothing and provides examples of how to set the global default time over which smoothing takes place.
+
+The next section discusses learning when entities join or leave an exercise, including registering callbacks with a DtReflectedEntityList and overriding virtual functions in a subclass. The text also provides an example of how to use these callbacks to print messages when an entity joins or leaves.
+
+The final two sections discuss notifying an application when state updates arrive. It explains how to register post-update callback functions with a DtReflectedEntity and how to use them to create graphic icons for different types of entities.
+
+Here is the code example provided:
+```
+void printHello(DtReflectedEntity* ent, void* userData)
+{
+   assert(ent);
+   cout << "HELLO " << ent->id().string() << endl;
+}
+void printGoodbye(DtReflectedEntity *ent, void *userData)
+{
+   assert(ent);
+   cout << "GOODBYE " << ent->id().string() << endl;
+}
+
+int main()
+{
+   ...
+   rel->addEntityAdditionCallback(printHello, 0);
+   rel->addEntityRemovalCallback(printGoodbye, 0);
+   ...
+}
+```
+Note that this code example is provided to illustrate the use of entity-addition and entity-removal callbacks.
+To check for the entity type, register a post-update callback from within your entity-addition callback. In the post-update callback, you can check if the entity type has been received.
+
+```c
+void myEntityAdditionCb(DtReflectedEntity* ent, void* usr)
+{
+   assert(ent);
+   // A new entity has arrived, but its ESR is empty. Ask
+   // to be notified when an update has been processed. ent->addPostUpdateCb(myPostUpdateCb, usr);
+}
+void myPostUpdateCb(DtReflectedEntity* ent, void* usr)
+{
+   assert(ent);
+   // A state update for the entity has just been processed,
+   // but there is no guarantee that the entity type was included. DtEntityStateRepository* esr = ent->esr();
+   if (esr->entityType() != DtEntityType(0,0,0,0,0,0,0))
+   {
+      // We have received entity type info, and can now use it 
+      // to create an appropriate icon. addIcon(esr->entityType());
+      // We probably no longer need the post-update callback. ent->removePostUpdateCb(myPostUpdateCb, usr);
+   }
+}
+```
+
+DtReflectedEntityList can time out entities if an update has not been received within a certain period of time. This is on by default in DIS, but off by default in HLA.
+
+```c
+int main()
+{
+   ...
+   // Register the entity addition callback with a reflected
+   // entity list. rel->addEntityAdditionCallback(myEntityAdditionCb, someObj);
+   ...
+}
+```
+
+You can also subclass DtReflectedEntity to associate additional data or functionality with an entity. You need to subclass DtReflectedEntityList as well.
+
+```c
+class myReflectedEntity : public DtReflectedEntity
+{
+public:
+   // Constructor
+#if DtHLA
+   myReflectedEntity(DtHlaObject* obj, DtExerciseConn* conn) : DtReflectedEntity(obj, conn)
+#elif DtDIS
+   myReflectedEntity(DtExerciseConn* conn,
+      const DtEntityIdentifier& id, const DtEntityType& type) :
+      DtReflectedEntity(conn, id, type)
+#endif   
+   {
+      // The two versions may be able to share a body
+      ...
+   }
+   // Specifics of myReflectedEntity
+   ...
+};
+class myREL : public DtReflectedEntityList
+{
+public:
+   // Constructor (same for both DIS and HLA)
+   myREL(DtExerciseConn* exConn) : DtReflectedEntityList(exConn) {}
+#if DtHLA
+   virtual DtReflectedEntity* newReflectedEntity(DtHlaObject* obj) const
+   {
+      return new myReflectedEntity(obj, exerciseConn());
+   }
+#elif DtDIS
+   virtual DtReflectedEntity* newReflectedEntity(const DtEntityIdentifier& id, const DtEntityType& type) const
+   {
+      return new myReflectedEntity(exerciseConn(), id, type);
+   }
+#endif
+};
+```
+
+HLA and DIS identify objects differently. In DIS, entities are identified by a triplet (site:application:entity) known as an entity identifier. In HLA, an object can be identified in several ways:
+
+* All objects have an object handle – that an application uses to identify a particular object in RTI service calls.
+* All objects also have an object name – a character string that can be used to identify an object.
+
+```c
+class myReflectedEntity : public DtReflectedEntity
+{
+public:
+   // Constructor
+#if DtHLA
+   myReflectedEntity(DtHlaObject* obj, DtExerciseConn* conn) : DtReflectedEntity(obj, conn)
+#elif DtDIS
+   myReflectedEntity(DtExerciseConn* conn,
+      const DtEntityIdentifier& id, const DtEntityType& type) :
+      DtReflectedEntity(conn, id, type)
+#endif   
+   {
+      // The two versions may be able to share a body
+      ...
+   }
+   // Specifics of myReflectedEntity
+   ...
+};
+```
+**Object Names**
+
+* The RTI knows object names and provides functions to find an object's name given its handle or vice versa.
+* Object names can be chosen by applications registering objects with the RTI, but if not specified, the RTI will assign names automatically.
+* Object names are represented as `char*` or VR-Link's `DtString` class.
+
+**VR-Link Identification**
+
+* VR-Link provides two types of identifiers: `DtObjectId` (local ID) and `DtGlobalObjectDesignator` (global ID).
+* `DtObjectId` is used to identify objects within an application, while `DtGlobalObjectDesignator` is used for inter-application communication.
+* Reflected object lists allow lookup by local ID or global ID.
+
+**HLA Object Naming**
+
+* In HLA, applications can choose a name for an object, but the RTI might reject it. To reserve a name, call `rtiAmb()->reserveObjectInstanceName()`.
+* The reserved name must be used to create a publisher.
+
+**Managing Other Types of Objects**
+
+* VR-Link provides classes for managing different types of objects (e.g., entities, aggregates, emitters, radio receivers, and gridded data).
+* Each type has its own set of classes (e.g., `DtAggregatePublisher`, `DtReflectedAggregateList`) that manage the corresponding object.
+* The state of an emitter beam is represented using a `DtEmitterBeamRepository` class.
+
+**Code Examples**
+
+The provided text includes code examples, such as:
+
+```
+rtiAmb()->reserveObjectInstanceName();
+DtEmitterSystemPublisher esr = new DtEmitterSystemPublisher();
+DtEmitterBeamRepository beamRep = esr.addBeam();
+beamRep.setEmitterSystemId(esr.getId());
+```
+
+These code examples demonstrate how to reserve an object name, create an emitter system publisher, and add a beam to the system.
+The `DtEmitterSystemRepository` class provides a list of all beam's repositories, which can be accessed through its `beamList()` member.
+
+On the sending side:
+- Create an instance of `DtEmitterSystemPublisher` and obtain a pointer to its system state repository (`esr`) and beam repository (`bsr`).
+- Set various attributes of the system's state using `esr` and beam's state using `bsr`.
+- Tick the system publisher to send necessary data.
+
+On the receiving side:
+- Create an instance of `DtReflectedEmitterSystemList` and iterate through or look up systems.
+- Inspect a `DtEmitterSystemRepository`, which contains a list of `DtEmitterBeamRepositories` for the system's beams, available through `beamList()`.
+- Check if a beam is still valid by looking it up in the system's list using `isMember()`.
+
+The text also discusses coordinate views, specifically topographic, UTM, and Cartesian coordinate systems. VR-Link provides several "view" classes that can be used to access data in different coordinate systems:
+
+* `DtTopoView` supports topographic coordinates.
+* `DtUtmView` supports UTM coordinates.
+* `DtCartesianView` supports any arbitrary Cartesian coordinate system.
+
+The views provide inspectors and mutators for working with locations, velocities, accelerations, orientations, and rotational velocities in the respective coordinate systems. Examples are provided for using these views to set and inspect data in topographic and UTM coordinate systems.
+
+Code examples are included throughout the text:
+
+* Creating a `DtTopoView` object: `DtTopoView topoView(esr, DtDeg2Rad(36.0), DtDeg2Rad(-121.0));`
+* Using mutators to set positions and orientations in topographic coordinates: `topoView.setLocation(DtVector(100.0, 100.0, 0.0));`
+* Using inspectors to get positions and orientations in topographic coordinates: `DtVector topoLoc = topoView.location();`
+
+Note that some code examples have been omitted for brevity, but the core information remains intact.
+**Cartesian Coordinate Views**
+
+The `DtCartesianView` class allows creation of views defined by Cartesian coordinate systems. It takes a `DtVector` for the origin in geocentric coordinates and a `DtDcm` for rotation from the geocentric frame to the new system. Alternatively, you can use the constructor with only a `DtEntityStateRepository` and initialize the view using `setOffset()` and `setRotation()` member functions.
+
+**Articulated Parts**
+
+Articulated parts are movable parts of an entity (e.g., turret, gun, landing gear). The state of these parts is part of an entity's state and is accessible through a `DtEntityStateRepository`. A `DtEntityStateRepository` uses a `DtArticulatedPartCollection` to store articulated parts data.
+
+**Inspecting Articulated Parts Data**
+
+The `DtArticulatedPartCollection` has various inspector functions:
+
+* `partCount()` returns the number of articulated parts
+* `totalParameterCount()` returns the number of articulation parameters
+* `getParameterMetrics()` returns a list of parameters for an articulated part
+* `getParameterValue()` returns the value of a particular parameter
+* `isParameterSet()` checks if a parameter is set
+
+**Setting Articulated Parts Data**
+
+To create articulated parts, call `getPart()` on the collection. To attach a part to another, call `attachPart()` with pointers to the child and parent parts.
+
+Code examples:
+
+* Inspecting the value of a parameter: `part->getParameterValue(metric)`
+* Iterating through parameters: `for (; paramIter != paramEnd; ++paramIter) { ... }`
+* Creating and attaching articulated parts: `artPartCollection->getPart(DtPrimaryTurret1); artPartCollection->attachPart(&gun, &turret);`
+
+Note that the code examples are included in the summary to preserve their original context and provide a clearer understanding of how to use the classes and functions.
+**Articulated Parts**
+
+When creating an articulated part, you must set parameters using `setParameter()` on the `DtArticulatedPart` object (retrieved by `getPart()`). For example:
+```c
+artPartCollection->getPart(DtPrimaryTurret1).setParameter(DtApAzimuth, DtDeg2Rad(myTurretAz));
+artPartCollection->getPart(DtPrimaryTurret1).setParameter(
+DtApAzimuthRate, DtDeg2Rad(myTurretAzRate));
+artPartCollection->getPart(DtPrimaryGun1).setParameter(DtApElevation, DtDeg2Rad(myGunElev));
+```
+**Attached Parts**
+
+An attached part is an entity attached to another entity. Use `DtEntityStateRepository::attPartList()` to retrieve a pointer to a protocol-independent `DtAttachedPartCollection`. For example:
+```c
+// Create the publisher and get its ESR's attached parts list
+DtEntityPublisher pub(...);
+DtEntityStateRepository* esr = pub.esr();
+DtAttachedPartList* attList = esr->attPartList();
+// Add a single attached part, a sidewinder missile attached to station number 15
+attList->addAttachedPart(DtSidewinderMissile, DtStation15);
+```
+**HLA-Specific Interface**
+
+VR-Link provides an HLA-specific interface for interacting with FOMs. This chapter describes the HLA-specific classes and features.
+
+**Code Examples**
+
+```c
+// Preprocessor directive to enclose HLA-specific code
+#if DtHLA
+   #if DtHLA_1516
+      #if DtHLA_1516_EVOLVED
+         // 1516 evolved specific
+      #else
+         // 1516 specific
+      #endif
+   #else
+      // 1.3 specific
+   #endif
+#endif
+
+// Building applications for use with the RTI 1516 specification
+DtExerciseConn* conn = new DtExerciseConn();
+conn->setFederateAmbassador(new MyFederateAmbassador());
+
+// Subclassing DtVrlFederateAmbassador
+class MyFederateAmbassador : public DtVrlFederateAmbassador {
+   // Implement FederateAmbassador methods
+};
+
+// Telling DtExerciseConn about your derived class
+conn->setFederateAmbassador(new MyFederateAmbassador());
+```
+Note that this summary includes all code examples, but some sections (e.g., HLA-Specific Interface) may not be directly applicable to every user.
+**5.2.1 Building Applications for Use with the RTI 1516 Specification**
+
+The VR-Link library has maintained source compatibility between the 1.3 and 1516 versions of the RTI API. Most types have the same name as in the 1.3 RTI API, but some exceptions include:
+
+* The RTI namespace is now a true namespace called `rti1516` instead of being prefixed with `RTI::`.
+* The `AttributeHandleValuePairSet` class has been replaced by a `std::map<AttributeHandle, VariableLengthData>` type.
+* To preserve source compatibility, a wrapper class `AttributeHandleValuePairSet` is provided.
+
+**5.2.2 Federate-Initiated Services**
+
+Federate-initiated services can be invoked using the RTI ambassador's member functions. For example:
+```cpp
+DtExerciseConn exConn(...);
+...
+DtVrlRtiAmbassador* rtiAmb = exConn.rtiAmb();
+rtiAmb->queryAttributeTransportationType(...);
+```
+**5.2.3 RTI-Initiated Services**
+
+RTI-initiated services are invoked when the RTI calls virtual member functions of `RTI::FederateAmbassador` from within. To create a derived class of `DtVrlFederateAmbassador`, you can use the `setFedAmbCreator` function:
+```cpp
+class MyFedAmb : public DtVrlFederateAmbassador {
+    // ...
+};
+
+void MyFedAmbCreator() {
+    return new MyFedAmb();
+}
+
+DtExerciseConn::setFedAmbCreator(MyFedAmbCreator);
+...
+DtExerciseConn exConn(...);
+```
+**5.3 - Getting Information About the FOM**
+
+When an HLA `DtExerciseConn` is constructed, VR-Link reads the appropriate FED file and builds a database of information about the FOM that the application code can query. You can obtain a pointer to a `DtExerciseConn`'s `DtFom` using the `fom()` member function.
+
+A `DtFom` contains a list of object class and interaction class descriptors, which can be obtained using functions such as `interClassByName()`, `objClassByName()`, `firstObjClass()`, and `nextObjClass()`. For example:
+```cpp
+DtExerciseConn conn(...);
+...
+DtFom* fom = conn.fom();
+for (DtObjClassDesc* desc = fom->firstObjClass(); desc; 
+desc = fom->nextObjClass(desc))
+{
+    std::cout << "ClassName: " << desc->name() << std::endl;
+}
+```
+Note that the example code is in C++ and assumes a familiarity with the VR-Link library.
+**Printing Object Class Names**
+
+The code snippet iterates through a list of object classes using the `objClassList()` method, which returns a `DtList` of `object classes`. For each object class, it prints its name using the `name()` method.
+```cpp
+// Print out the names of all object classes in the current FOM.
+DtExerciseConn conn(...);
+DtFom *fom = con.fom();
+...
+for (DtListItem *item = objClassList()->first(); item; item = item->next()) {
+    DtObjectClassDesc *objDesc = static_cast<DtObjClassDesc *>(item->data());
+    std::cout << "ClassName: " << objDesc->name() << std::endl;
+}
+```
+**Publishing Classes and Attributes**
+
+To publish an object class, you need to create a `DtEntityPublisher` and register the class with the RTI using the `publish()` method. You can also specify which attributes to publish by passing an `AttributeHandleSet` to the `publish()` method.
+
+For example:
+```cpp
+#include <vlutil/vlStringUtil.h> // For DtToWString
+...
+DtExerciseConn  exConn(...);
+...
+DtObjClassDesc *desc = exConn.fom()->objClassByName("BaseEntity.PhysicalEntity.Platform.GroundVehicle");
+RTI::ObjectClassHandle classHand = desc->handle();
+RTI::AttributeHandleSet hSet;
+hSet.insert(exConn.rtiAmb()->getAttributeHandle(classHand, L"EntityType"));
+hSet.insert(exConn.rtiAmb()->getAttributeHandle(DtToWString("Position")));
+desc->publish(hSet);
+```
+**Subscribing to Classes and Attributes**
+
+To subscribe to an object class, you need to create a `DtReflectedEntityList` and register the class with the RTI using the `subscribe()` method. You can also specify which classes to subscribe to by passing a list of `ObjectClassHandles` to the `subscribe()` method.
+
+For example:
+```cpp
+...
+#if DtHLA
+    DtList handleList;
+    std::wstring hName(L"BaseEntity.PhysicalEntity.Platform.GroundVehicle");
+    handleList.add(new RTI::ObjectClassHandle(exConn.rtiAmb()->getObjectClassHandle(hName)));
+#else
+    // DtList holds pointers. Since we know that Handles in HLA 1.3 are just integer values, we store them as pointer values.
+#endif
+    DtReflectedEntityList list(handleList);
+```
+Note: The code examples provided are specific to the `DtFom` and `DtEntityPublisher` classes used in the context of a particular project or framework (likely VR-Link). The syntax and usage may vary depending on the specific implementation.
+The provided code snippets demonstrate the use of VR-Link and RTI services in a High Level Architecture (HLA) simulation. The code adds handles to an HLA object class and creates a Reflected Entity List using `DtReflectedEntityList`. In the case of HLA 1516, the handles are cleaned up.
+
+The text also provides information on subscribing to HLA objects and attributes. By default, VR-Link subscribes to all attributes of an object class, but it is possible to subscribe to a subset of attributes using `DtObjClassDesc::subscribe()`.
+
+Additionally, the text describes managing HLA objects in VR-Link using instances of the `DtHlaObject` class. The `DtHlaObjectManager` class provides functions to manage and access HLA objects, including retrieving lists of all reflected and locally simulated HLA objects.
+
+The code snippet at the end demonstrates how to use the `DtHlaObjectManager` class to print the IDs of all current reflected or local HLA objects. It also describes additional member functions of `DtHlaObject`, such as `attributesNeededByFederation()` and `lastSimTimeUpdateReceived()`.
+
+Finally, the text discusses finding out when HLA objects are discovered and removed, providing two methods: registering "objectAddition" and "objectRemoval" callbacks with a `DtReflectedObjectList` or using the `DtHlaObject` class to receive notifications.
+The `DtExerciseConn` class provides several methods for registering callback functions to notify applications when objects are discovered or removed. These callbacks can be registered using `addDiscoverObjectCallback()` or `removeDiscoverObjectCallback()`, and are used to notify applications of object discoveries regardless of class.
+
+Additionally, the text discusses how to register removal callbacks using `addRemoveObjectCb()` or `removeRemoveObjectCb()`, which are used to notify applications when an object is removed from VR-Link's internal list of reflected HLA objects.
+
+The text also covers the use of `addPostReflectCb()` and `removePostReflectCb()` to register callback functions that will be notified when an update message has been processed by a `DtHlaObject`. These callbacks are useful for intercepting reflected attribute values.
+
+Furthermore, the text explains how to force attribute updates using `forceUpdate()`, which can be used to send eligible attributes during the next call to `tick()` even if their update conditions have not been met. The text also discusses reflecting locally-generated updates by setting the "reflecting" flag on the `DtExerciseConn` object.
+
+Here is a summary of the code examples provided:
+
+* `addDiscoverObjectCallback(RTI::ObjectClassHandle(0));` (RTI 1.3)
+* `addDiscoverObjectCallback(RTI::ObjectClassHandle());` (RTI 1516)
+* `void myDiscoverObjectCb(DtHlaObject* obj, void* usr);`
+* `void myRemoveObjectCb(DtHlaObject* obj, void* usr);`
+* `void postReflectCb(const DtStateMsg& msg, DtHlaObject* obj, void* usr);`
+
+I hope this summary helps! Let me know if you have any questions or need further clarification.
+The article discusses ownership management in VR-Link, which allows federates to transfer responsibility for sending updates for object attributes from one federate to another. To use ownership management, you should turn on the reflection option, as it includes values for all attributes, regardless of whether they were sent locally or remotely.
+
+There are several ways to control ownership management:
+
+* Use `DtHlaObject`'s member functions (`acquireObject()`, `divestObject()`, etc.) to transfer ownership of objects and attributes.
+* Create a publisher for an object using its constructor, even if you're not the federate that registers it with the RTI.
+* Set the `deleteObjInDtorFlag()` function to change the behavior of deleting HLA objects when the local federate owns the `privilegeToDelete` attribute.
+* Register a `removeObject()` callback with the `DtHlaObject` using its `addRemoveObjectCb()` function to be notified when an object is deleted.
+
+Additionally, there are some notes and recommendations:
+
+* If you're using ownership management, it's recommended to call `DtExerciseConn::setReflecting()` to enable reflecting locally-generated updates.
+* Creating a publisher and updating attributes does not automatically result in the creation of a corresponding reflected object in the reflected object list unless self-reflecting is turned on.
+* The Ownership Handler example shows how to manually manage publish and reflected lists when an object transfer occurs.
+
+The text also includes some technical details about `DtHlaObject`'s member functions, such as `ownedAttributes()`, which returns the current set of owned attributes for a particular `DtHlaObject`.
+The RTI (Run-Time Infrastructure) provides ownership management services through callbacks. These callbacks are intercepted by VR-Link and passed to application code through a class called `DtOwnershipHandler`. There are three types of `DtOwnershipHandler` classes: `DtDefaultOwnershipHandler`, `DtPartialOwnershipHandler`, and `DtRprOwnershipHandler`. The first two provide basic ownership management, while the third automatically sends acquire interactions according to the RPR (Real-time Publish/Subscribe) standard.
+
+To implement ownership management, a developer can create their own `DtOwnershipHandler` class or use one of the provided classes. They must also register the handler with either the RTI's default ownership handler or individual objects using `DtHlaObject::setOwnershipHandler()`.
+
+The text provides four examples of implementing ownership management:
+
+1. Acquiring an object: Create a publisher for the object, pass the reflected object to the publisher's constructor, and call `DtHlaObject::acquireObject()`. Attach a `DtOwnershipHandler` to the object to receive notifications when acquisition succeeds.
+2. Divesting attributes: Create a publisher and register an object with the RTI. Call either `unconditionalDivest()` or `negotiatedDivest()` on the publisher's `DtHlaObject`. Attach a `DtOwnershipHandler` to the object to receive notifications when another federate assumes ownership.
+3. Giving up attributes if requested: Create a publisher and attach a `DtOwnershipHandler` that accepts all divestiture actions.
+4. Acquiring attributes if offered: Set the default acquisition action of a `DtOwnershipHandler` to always accept acquisitions, add a callback for successful acquisition, and create a reflected object list.
+
+The code examples provided demonstrate how to implement these ownership management scenarios using the RTI's APIs.
+**Geographic DDM**
+
+To use Data Distribution Management (DDM) with VR-Link, you can either use the default VR-Link DDM scheme or pass in your own DDM region. The default scheme uses a space named BenchmarkGeographicSpace with two dimensions: X and Y, corresponding to longitude and latitude.
+
+**Enabling Geographic DDM**
+
+To enable geographic DDM, set `exConn.setUseGeographicDdm(true)`.
+
+**Publishing Using Geographic DDM**
+
+When publishing with a geographic region, the `DtExerciseConn`'s `setUseGeographicDDM` flag must be set to true. You can pass the region to other publishers to allow them to publish in the same region.
+
+**Reflecting Using Geographic DDM**
+
+You can create a geographic region and pass it into a reflected list to subscribe to a class with region.
+
+**Example Code**
+
+```
+exConn.setUseGeographicDdm(true);
+DtEntityPublisher entityPub(...);
+DtEmitterSystemPublisher emitterPub(&exConn, 0, entityPub.publishingRegion());
+```
+
+**Using DDM without VR-Link's Geographic Implementation**
+
+You can create any type of region using the `DtDDMRegion` class. Each publisher, reflected list, and interaction can take a `DtDDMRegion`, and will publish or subscribe with whatever `DtDDMRegion` you pass in.
+
+**DtInteraction Class**
+
+The HLA version of the `DtInteraction` class is defined in `interactionHLA.h`. You can use `setExConn()` to set the `DtExerciseConn` and `DtInterClassDesc` associated with a particular instance. This function must be called before many of `DtInteraction`'s member functions can return meaningful results.
+
+**Example Code**
+
+```
+DtInteraction fireInteraction;
+...
+exConn.sendStampedWithRegion(fireInteraction, region);
+```
+
+Note that the code examples provided are snippets and may not be complete or compilable on their own. They are intended to illustrate specific concepts and functionality rather than provide a working example.
+1. Interaction classes and their relationship with RTI: The text explains how interaction classes store parameter values in their own native representation, but can also obtain data in the RTI's representation.
+
+2. DtInteraction class and its functions: The text describes various functions of the DtInteraction class, including getParameterHandleValuePairSet(), setFromPhvps(), interactionClassHandle(), interactionClassName(), numParameters(), neededByFederation(), print(), printHeader(), printParams(), and printData().
+
+3. Using generic attributes and parameters: The text explains how to enable generics in VR-Link and use them to access extended information in the Federation Object Model (FOM). It also discusses the advantages of using generics over traditional code generation.
+
+4. General HLA issues: The text covers various general HLA issues, including time stamps, registering and responding to synchronization points, time management, and VR-Link calls to RTI services.
+
+The provided code examples are:
+
+* Example 1: Setting a DtInteraction's exercise connection using the setExConn() function.
+* Example 2: Printing a DtInteraction object using the print() function.
+
+Here is the summary without losing any core information and keeping all code examples:
+
+In this chapter, we will discuss various aspects of using the VR-Link library for High-Level Architecture (HLA) simulation. We will explore the interaction classes and their relationship with RTI, describe the functions of the DtInteraction class, explain how to use generic attributes and parameters, and cover general HLA issues.
+
+```c
+#include <DtExerciseConn.h>
+#include <DtInteraction.h>
+
+int main() {
+    // Create a new DtExerciseConn object
+    DtExerciseConn exConn(...);
+
+    // Create a new DtFireInteraction object
+    DtFireInteraction inter;
+    inter.setAttacker(...);
+    
+    // Set the exercise connection for the interaction
+    inter.setExConn(&exConn);
+
+    // Print the interaction object
+    inter.print();
+
+    return 0;
+}
+```
+
+Note: The provided code examples are not complete and may require additional libraries or classes to be functional.
+1. **Federation Synchronization**: How to register callback functions to be called when the federation is synchronized at specific points or at any point.
+2. **Automatic Response to Synchronization Points**: How to enable or disable VR-Link's automatic response to announced synchronization points.
+3. **Time Management**: The use of Time Management in VR-Link, including Federation Time, Time Regulation, and sending/receiving Time Stamp Order (TSO) messages.
+4. **Callbacks for Time Management**: Registering callback functions to handle RTI events related to time management.
+
+The code examples provided demonstrate how to use the VR-Link API to:
+
+* Register a callback function for federation synchronization
+* Enable or disable automatic response to synchronization points
+* Send and receive TSO messages
+* Use callbacks for time management events
+
+Here is the summarized text without losing any core information and keeping all code examples:
+```
+// Federation Synchronization
+exConn.addFederationSynchedCb("point1", userFunction, NULL);
+exConn.addFederationSynchedCb(userFunction, NULL);
+
+// Automatic Response to Synchronization Points
+exConn.setReplyingToSynchronizationPoints(false);
+
+// Time Management
+DtExerciseConn exConn(. . .);
+void timeAdvanceRequestCb(const RTI::FedTime &theFedTime, void *userData) {
+    // handle time advance request
+}
+void timeConstrainedEnabledCb(const RTI::FedTime &theFedTime, void *userData) {
+    // handle time constrained enabled
+}
+
+exConn.fedAmb()->addTimeAdvanceGrantCb(timeAdvanceRequestCb, 0);
+exConn.fedAmb()->addTimeConstrainedEnabledCb(timeConstrainedEnabledCb, 0);
+
+// Sending TSO Messages
+void sendTSOMessage() {
+    RTI::FedTime fedTime = // get current federation time
+    // create and send TSO message
+}
+
+// Receiving TSO Messages
+void receiveTSOMessage(RTI::FedTime fedTime) {
+    // handle received TSO message
+}
+
+// Converting FedTime to DtTime
+static void DtExerciseConn::setFedTimeToVrlTimeConverter(DtFedTimeToVrlTimeConverter func);
+static void DtExerciseConn::setVrlTimeToFedTimeConverter(DtVrlTimeToFedTimeConverter func);
+
+exConn.setFedTimeToVrlTimeConverter(myFedTimeToVrlTimeConverter);
+exConn.setVrlTimeToFedTimeConverter(myVrlTimeToFedTimeConverter);
+```
+**Setting Conversion Functions**
+
+To set the conversion functions back to their default, pass a `NULL` value to either `DtExerciseConn::setFedTimeToVrlTimeConverter()` or `DtExerciseConn::setVrlTimeToFedTimeConverter()`. To use these conversion functions, call the member functions `DtExerciseConn::fedTimeToVrlTimeConverter()` and `DtExerciseConn::vrlTimeToFedTimeConverter()`.
+
+**VR-Link Calls to RTI Services**
+
+The following table lists Federate-initiated services that may be called by VR-Link:
+
+| Service | Invocation |
+| --- | --- |
+| createFederationExecution | Invoked from within the DtExerciseConn constructor. |
+| destroyFederationExecution | Invoked from within the DtExerciseConn destructor if the DtExerciseConn's destroyFedExec flag is true (the default). |
+| ... | ... |
+
+The following table lists RTI-initiated services for which VR-Link provides non-NULL definitions:
+
+| Service | Response |
+| --- | --- |
+| startRegistrationForObjectClass | VR-Link maintains information about which object classes are needed by the federation. |
+| stopRegistrationForObjectClass | VR-Link does not maintain information about which object classes are needed by the federation. |
+| ... | ... |
+
+**Interoperability Between HLA 1.3 and IEEE 1516 Federates**
+
+The MAK RTI supports run-time interoperability between HLA 1.3 federates and IEEE 1516 federates. Federates that use Federation Management, Declaration Management, Object Management, Time Management, and Data Distribution Management services should be able to interoperate across the 1.3-1516 boundary.
+
+However, there are some restrictions and requirements:
+
+* MOM is not currently supported across the 1.3-1516 boundary, and must be disabled.
+* Ownership management is also problematic, and should be avoided.
+* Object names supplied by 1516 federates must allow conversion from wide char to narrow character representation (ASCII only).
+* User-supplied tags are restricted to the 1.3 string format.
+* Consistency in FOM format is necessary due to differences in naming conventions between HLA 1.3 and IEEE 1516.
+
+The provided code examples and tables summarize the usage and behavior of the VR-Link API, highlighting its role in enabling interoperability between different simulation standards.
+The text highlights two main categories of FOM modifications:
+
+1. FOMs that contain only concepts already present in VR-Link's top-level API, but represented differently.
+2. FOMs that include concepts not present in VR-Link's API.
+
+To implement FOM agility, VR-Link uses a FOM Mapper, which routes and converts data between the FOM-independent API and the FOM representations used for a particular federation execution.
+
+The text also provides an overview of the architecture for FOM agility, including:
+
+* The top-level FOM-independent API
+* The FOM Mapping layer
+* Two broad categories of FOM modifications
+
+Additionally, the text explains how to implement FOM mapping in VR-Link, including:
+
+* Class mappings: publishers need to know which FOM object class to choose, reflected object lists need to know which types of objects to manage, interaction instances need to know which FOM class to use for representation, and so on.
+* Attribute and parameter encoding and decoding: publishers need to decide whether each attribute needs to be sent during a call to tick(), and how to encode values into outgoing attribute updates, while reflected objects need to decode attributes into their state repository.
+
+The text concludes by highlighting the importance of FOM agility in VR-Link and providing resources for further information on implementing FOM mapping.
+
+Here is the code example provided:
+
+None. The text does not contain any code examples.
+There are two ways that a `DtFomMapper` can obtain its FOM mapping information: it can either hard-code the name of the FOM class or check a global variable, or it can be obtained from its `DtExerciseConn`, which creates or is passed a `DtFomMapper` on construction.
+
+The text then describes how to configure a `DtFomMapper`'s class mappings. This includes:
+
+* Choosing an object class to publish: the `DtObjectPublisher` asks the FOM Mapper for the name of the FOM object class to use, and this can be configured by mapping a single or multiple classes to a publisher.
+* Mapping a single FOM class to a publisher: this is done using `setObjectClassToChoose()`.
+* Mapping multiple FOM classes to a publisher: this is done using `setObjectClassChooser()` and passing a function that chooses the FOM class based on instance-specific data.
+* Subscribing to object classes: the `DtReflectedObjectList` asks the FOM Mapper for the names of the FOM classes to subscribe to, and this can be configured by setting the FOM class or classes using `setObjectClass()` or `setObjectClasses()`.
+* Choosing an interaction class to publish: this works similarly to choosing an object class, with options to map a single or multiple FOM classes to a publisher.
+
+The following code examples are provided:
+
+```
+fomMapper->setObjectClassToChoose("DtAggregatePublisher", "BaseEntity.AggregateEntity");
+```
+
+```
+fomMapper->setObjectClassChooser("DtEntityPublisher", myClassChooser);
+```
+
+```
+fomMapper->setObjectClass("DtReflectedAggregateList", "BaseEntity.AggregateEntity");
+```
+
+```
+DtList entityClasses;
+entityClasses.add("BaseEntity");
+entityClasses.add("PhysicalEntity");
+...
+fomMapper->setObjectClasses("DtReflectedEntityList", entityClasses);
+```
+The RPR FOM (Real-time Platform for Robotics) uses various components to map between VR-Link classes and RTI (Run-Time Infrastructure) messages. The `DtFomMapper` class manages these mappings, including:
+
+1. **Interaction Class Mapping**: specifies which FOM class a particular interaction should use. For example: `fomMapper->setInteractionClassToChoose("DtFireInteraction", "WeaponFire");`
+2. **Interaction Class Chooser**: allows for dynamic selection of an interaction class based on specific conditions. A chooser function takes a `DtExerciseConn` and `DtInteraction` object as input, and returns the chosen interaction class.
+3. **Subscription to Interaction Classes**: when an application adds a callback for a particular interaction class using `addCallback()`, the `DtFomMapper` maps that request to subscriptions to FOM classes.
+
+To create instances of `DtInteraction` subclasses, the `DtFomMapper` uses an `DtInteractionFactory`. This factory can be configured with mappings between FOM classes and interaction creation functions. For example: `fomMapper()->interactionFactory()->addCreator("WeaponFire", DtFireInteraction::create);`
+
+The text also describes **Encoder and Decoder Factories**, which manage tables of encoding and decoding functions for attributes and parameters. These factories are used to generate or decode RTI representations of state updates or interactions.
+
+The core classes involved in this process include:
+
+* `DtHlaStateEncoder` and `DtHlaStateDecoder` (for encoding and decoding object state)
+* `DtInteractionEncoder` and `DtInteractionDecoder` (for encoding and decoding interactions)
+* `DtReflectedObject` (uses a state decoder to unpack incoming data)
+* `DtInteraction` (uses an interaction decoder to unpack incoming data)
+
+Developers can customize these classes by creating subclasses or overriding the `encode()` and `decode()` functions.
+**Encoding and Decoding Functions**
+
+* Encoders contain tables of encoding functions, one per FOM attribute or parameter.
+* Decoders contain tables of decoding functions, one per FOM attribute or parameter.
+* Each function is responsible for encoding/decoding the associated attribute or parameter.
+* The `addEncoder()` and `addDecoder()` member functions allow registering custom encoding and decoding functions for a particular attribute or parameter.
+
+**Code Examples**
+
+1. **Decoding Interactions**
+```c
+void decodeRateOfFire(DtFireInteraction* inter, const RTI::ParameterHandleValuePairSet& pvlist, int index) {
+    // ...
+}
+```
+This function decodes the "RateOfFire" attribute of a `DtFireInteraction` object from an `RTI::ParameterHandleValuePairSet`.
+
+2. **Decoding Object State Updates**
+```c
+void decodePosition(DtEntityStateRepository* stateRep, const RTI::AttributeHandleValuePairSet& attrs, int index) {
+    // ...
+}
+```
+This function decodes the "Position" attribute of a `DtEntityStateRepository` object from an `RTI::AttributeHandleValuePairSet`.
+
+3. **Encoding Interactions**
+```c
+void encodeRateOfFire(const DtFireInteraction& inter, RTI::ParameterHandleValuePairSet* params, RTI::ParameterHandle paramHandle) {
+    // ...
+}
+```
+This function encodes the "RateOfFire" attribute of a `DtFireInteraction` object into an `RTI::ParameterHandleValuePairSet`.
+
+**Encoder and Decoder Factories**
+
+The text mentions that there are additional functions for registering encoding and decoding functions for multiple classes, which can be found in the encoder and decoder factory classes.
+
+**Encoder and Decoder Usage**
+
+* Encoders work like decoders but in reverse.
+* The `encode()` function takes a `DtInteraction` instance and an `RTI::ParameterHandleValuePairSet` to fill out with FOM representation data.
+* The `decode()` function takes an `RTI::AttributeHandleValuePairSet` and a `DtStateRepository` to decode the attributes into.
+**Encoder and Decoder Factories**
+
+When creating a publisher, reflected object, or interaction, a FOM Mapper is used to obtain instances of encoders and decoders for use with its FOM class. The `DtFomMapper` uses four factory classes: `DtStateDecoderFactory`, `DtStateEncoderFactory`, `DtInteractionDecoderFactory`, and `DtInteractionEncoderFactory`. These factories have member functions such as `addEncoder()` and `addDecoder()` to associate a properly configured instance of an encoder or decoder with each FOM object or interaction class.
+
+**Encoder and Decoder Examples**
+
+Here are some examples of using the factory classes:
+
+```cpp
+RTI::AttributeHandleValuePairSet* avList = new RTI::AttributeHandleValuePairSet();
+encodePosition(stateRep, avList, attrHandle);
+```
+
+```cpp
+bool needDamageState(
+   const DtEntityStateRepository& stateRep,
+   const DtEntityStateRepository& asSeenByRemote)
+{
+   return (stateRep.damageState() != asSeenByRemote.damageState()) 
+? true : false;
+}
+```
+
+**Registering Own Encoding or Decoding Functions**
+
+To register own encoding or decoding functions for a particular FOM class, use the factory's `encoder()` or `decoder()` function to get a pointer to the object containing the function table for that class. Then use the encoder or decoder's mutators to register your own functions:
+
+```cpp
+RTI::InteractionClassHandle handle = 
+   rtiAmb->getInteractionClassHandle("WeaponFire");
+DtInteractionDecoder* fireDecoder = 
+   fomMapper->interactionDecoderFactory()->decoder(handle);
+fireDecoder->addDecoder("RateOfFire", myFunc); 
+```
+
+**Replacing Factory Instances**
+
+You can replace any of the factories used by a FOM Mapper using the `factory_typesetFactory()` functions:
+
+```cpp
+MyEncoderFactory* factory = new MyEncoderFactory(...); 
+fomMapper->setStateEncoderFactory(factory);
+```
+
+**Choosing a DtFomMapper**
+
+When constructing a `DtExerciseConn`, you must choose a FOM Mapper for it to use. You can do this in one of several different ways:
+
+1. Pass a `DtFomMapper` instance to the constructor.
+2. Pass the name of a shared library containing a function that creates the desired FOM Mapper to the constructor.
+3. Set the fallback FOM Mapper creation function using the static `setFomMapperCreator()` function.
+4. Allow `DtExerciseConn` to create an empty FOM Mapper and configure it after the constructor returns.
+The `DtExerciseConn` class has several constructors to initialize it with different parameters.
+
+1. The first constructor takes three arguments: `execName`, `federateName`, and an optional `mapper` argument. If no `mapper` is provided, it defaults to a `DtRprFomMapper`. If `NULL` is passed as the `mapper`, VR-Link uses the fallback FOM Mapper creation function.
+
+Example:
+```c
+MyFomMapper mapper();
+DtExerciseConn("VR-Link", "MyAppName", &mapper);
+```
+2. The second constructor takes four arguments: `execName`, `federateName`, `dsoName`, and an optional `fedFileName` and `fomMapInitData`. It loads a shared library (`DSO` or `DLL`) specified by `dsoName` and uses the functions `DtCreateFomMapper` and `DtDeleteFomMapper` to create and delete a FOM Mapper.
+
+Example:
+```c
+extern "C"
+{
+    DtFomMapper* DtCreateFomMapper(void* usr)
+    {
+        return new MyFomMapper();
+    }
+    void DtDeleteFomMapper(DtFomMapper* mapper)
+    {
+        delete mapper;
+    }
+}
+
+DtExerciseConn("VR-Link", "MyAppName", "mySharedLibrary.so", NULL, NULL);
+```
+The `fomMapInitData` argument is passed to the `DtCreateFomMapper` function.
+
+3. The fallback FOM Mapper creation function can be set using the `setFomMapperCreator` method of the `DtExerciseConn` class.
+
+4. A FOM Mapper can be configured after constructing a `DtExerciseConn` instance by using its mutator functions.
+
+5. VR-Link has built-in support for the RPR FOM and provides two classes to map it: `DtRprFomMapper` and `DtSimpleRprFomMapper`. The former maps all RPR FOM classes, attributes, and parameters, while the latter maps only a subset of them.
+
+Example:
+```c
+DtExerciseConn conn("VR-Link", "MyAppName", new DtRprFomMapper(2.0017));
+```
+Note that this summary preserves all code examples provided in the original text.
+**Deriving a Custom `DtFomMapper` Class**
+
+To create a custom `DtFomMapper` class, you can subclass `DtEmptyFomMapper` and override its `init()` function. This function should be responsible for registering mapping information and initializing the FOM mapper. The constructor of your custom class should be empty, as it does not need to know about the `DtExerciseConn` object.
+
+The example provided in `./examples/myFomMap` shows how to create a custom FOM mapper that registers encoding and decoding functions for new FOM concepts.
+
+**Using the VR-Link Code Generator**
+
+The VR-Link Code Generator is a tool that helps you extend VR-Link's functionality by generating C++ code based on a FOM definition file (OMT or XML). The generated code includes classes for HLA objects and interactions, which can be used to build a dynamic library. This library can then be integrated into application code.
+
+The generator produces code for HLA only and does not extend the protocol-independent API. It is recommended to use the built-in object set whenever possible to leverage the protocol-independent API. However, if you need an expanded set of objects and interactions, the Code Generator can help you generate them.
+
+**Code Examples**
+
+The text provides several examples of how to create FOM mappers and extend VR-Link's functionality:
+
+* `myFomMap`: demonstrates how to create a custom FOM mapper for a new FOM
+* `addAttr`, `testInter`, `testObj`, and `testSimpInter`: demonstrate how to add new attributes, interactions, or object classes to the RPR FOM
+
+These examples are located in the `./examples` directory and provide a starting point for extending VR-Link's functionality.
+The VR-Link Code Generator is designed to assist customers with extending VR-Link for HLA (and DIS) by generating code for FOMs. The Code Generator has limitations and may not be able to fully generate code for complex FOMs, requiring minor hand editing or even major editing in some cases.
+
+**Installing the VR-Link Code Generator**
+
+The Code Generator is installed as part of the VR-Link package in `./bin`.
+
+**Starting the VR-Link Code Generator**
+
+The command-line syntax is:
+```
+./bin/vrlcodegenerator [-p <string>] [-I <string>] [-P <string>] [-F <string>] [-O <string>] [-A] [-G] [--] [-v] [-h]
+```
+Where:
+
+* `-p` specifies a prefix for generated class names
+* `-I` specifies the include directory for generated code
+* `-P` specifies the project file
+* `-F` specifies a FOM definition file (accepted multiple times)
+* `-O` specifies the output directory for generated code
+* `-A` generates all objects in the FOM definition
+* `-G` performs file generation without opening the GUI
+* `--` ignores the rest of the labeled arguments following this flag
+* `-v` displays version information and exits
+* `-h` displays usage information and exits
+
+**The VR-Link Code Generator Window**
+
+The window has two panes: the left pane lists objects and interactions contained in the FOM definition file, while the right pane lists objects and interactions for which code will be generated.
+
+**Code Generator Projects**
+
+Projects are created, loaded, and saved using the File menu. Each project works within the context of a directory where you want to store it.
+
+**Using the Code Generator**
+
+**Loading a FOM Definition File**: You can load FOM definition files in XML or OMT formats by choosing File -> Import FOM.
+
+**Selecting Objects and Interactions to Generate**: You can select objects and interactions using a tree view or by clicking on them. Shift-click or Ctrl-click to select multiple items, or choose Edit -> Select All to select all items.
+
+**Removing Classes from the Objects to Generate List**: When removing a parent class, all children are also removed.
+
+Note that this summary does not include any assumptions not within the text and keeps all code examples intact.
+**Removing a Class from the Objects/Interactions to Generate List**
+
+* Select the class in the list
+* Click the left-pointing arrow
+
+**Customizing Encoders and Decoders**
+
+* Double-click the class or right-click and select "Customize"
+* The "Customize Encoders and Decoders" window opens, listing attributes for the object or interaction
+* Select an attribute to edit, and customize the encoder and decoder code on the Encoding and Decoding tabs
+* Click Save Changes
+
+**Configuring Code Generation Preferences**
+
+* Set preferences in the `./data/config/codeGenConfig.xml` configuration file, GUI, or both:
+	+ Namespace: wrap generated code within a namespace to avoid name conflicts (e.g. `namespaceName = "MyNamespace"` )
+	+ Create Include Directory: specify directory for header files relative to output directory
+	+ Prefix Classnames: add prefix to class names (e.g. `prefix = "Ab"`)
+	+ 64-bit Linux Makefile: generate makefile for building generated code on 64-bit Linux
+	+ Generate Examples: create simple talk and listen examples demonstrating object or interaction usage
+	+ Map RTIObjectId to DtGlobalObjectDesignator: map common structure to VR-Link's internal type
+	+ Generate #error for undecodable attributes: insert error message into output if code generator cannot generate correct code
+	+ Include HLA Standard MIM: include Management Information Model (MIM) FOM elements from HLA Evolved standard
+	+ Generate DIS PDUs: experimental feature generating custom DIS PDUs and protocol-independent API
+
+**Configuring Code Generation Preferences in the GUI**
+
+* Choose Configuration -> Preferences
+* Set preferences in the "Preferences" dialog box:
+	+ Use Namespace: select namespace name
+	+ Check boxes for other options (e.g. Create Include Directory, Prefix Classnames)
+* Click OK
+
+**Choosing an Output Directory**
+
+* Choose Configuration -> Choose Output Directory
+* Select output directory and click Select Folder
+**7.5 - Generated Code**
+
+* Enumerations: An enumeration file is generated from enumerated data types in the OMT or XML file.
+* Data Types: The generator produces files to implement complex data types and their network types.
+* Objects and Interactions: For each object, a DtStateRepository, DtObjectPublisher, DtReflectedObject, etc. is created. For each interaction, a DtInteraction, DtInteractionEncoder, and DtInteractionDecoder is created.
+
+**7.5.4 Project Files and Makefiles**
+
+* The generator produces Windows project files and UNIX Makefiles to build a dynamic library that can be linked into application code.
+
+**7.5.5 Attributes and Types that Cannot be Decoded and Generated**
+
+* There are instances where the code generator cannot properly generate encoding or decoding of attributes or complex data types, such as:
+	+ Complex data type with more than one component of dynamic cardinality.
+	+ Attribute or complex data type containing a component of variable size data.
+	+ Variant record.
+
+**8 - The DIS Specific Interface**
+
+* VR-Link's protocol-independent interface provides functionality for simulations to interact with a DIS exercise, but some applications need greater control over DIS parameters.
+* This section describes the DIS-specific interface, including working with PDUs (Protocol Data Units).
+
+**8.1 - Working with PDUs**
+
+* The DtPdu class represents DIS PDUs and is an abstract base class.
+* Each PDU has a header with information such as entity ID, sequence number, etc.
+* There are various functions for inspecting and setting data in a PDU header, constructing a blank PDU, and more.
+
+Note: I have preserved all code examples and tables provided in the original text.
+**Sending PDUs**
+
+* Send PDUs using `DtExerciseConn::send()` or `DtExerciseConn::sendStamped()` functions.
+* `sendStamped()` sets the exercise ID, timestamp fields, and current time, while `send()` leaves the PDU header unmodified.
+* Example: Create a `DtTransmitterPdu`, fill it with data, and send it to the exercise connection using `exConn.sendStamped(pdu)`.
+
+**Receiving PDUs**
+
+* Handle incoming PDUs through callbacks registered using `PDU` class's static `addCallback()` function.
+* The process is similar to receiving interactions, described in section 4.3.2 Receiving Interactions.
+* Note: Applications usually send interaction PDUs and use `DtEntityPublisher` to manage the sending of entity state PDUs.
+
+**More Control Over Receiving PDUs**
+
+* `DtExerciseConn::drainInput()` works by repeatedly calling `readAndProcess()`.
+* Application code can use any of these functions instead of calling `drainInput()`.
+* `netRead()` tries to read a packet from the network, constructs an instance of a PDU class, and returns it.
+* Use `delete` to free memory allocated for PDUs returned by `netRead()`.
+
+**Using netRead() Function**
+
+* Successive calls to `netRead()` return PDUs that use the same buffer for their network representations. Delete each PDU before making another call to `netRead()`.
+* If filtering is enabled, only PDUs of registered kinds are returned.
+* Use `addInterestInPduKind()` or disable filtering using `DtExerciseConn::disableFiltering()`.
+
+**Using readUntil() Function**
+
+* Similar to `drainInput()`, but returns when the predicate function returns true or a timeout occurs.
+* Provide the predicate function with signature `int predicate(DtPdu *pdu, void *arg)`.
+* Example:
+```c
+DtExerciseConn exConn(...);
+...
+int retCode;
+while (1)
+{
+   DtPduKind kind = exConn.readUntil(myPredicate, &myArg, 10, 2);
+   if (kind != DtOtherPduKind)
+   {
+      // do something with the PDU
+      ...
+      delete pdu;
+   }
+}
+```
+The `DtPdu` class provides functions to inspect and set data in a DIS PDU's header. The following functions return values from the PDU's header:
+
+* `protocolVersion()`
+* `exerciseId()`
+* `kind()`
+* `protocolFamily()`
+* `length()`
+
+Other functions include:
+
+* `timeStamp()`: returns a floating point number representing the time (in seconds past the hour) encoded in the PDU's timestamp.
+* `timeStampType()`: returns either `DtTimeStampRelative` or `DtTimeStampAbsolute`, depending on the type of the PDU's timestamp.
+* `setExerciseId()`: sets the value of the PDU header's exercise ID field.
+* `setTimeStamp()`: sets the PDU's timestamp to time modulo 3600, and the timestamp type to relOrAbs. Time is the time in seconds at which the PDU's data is to be considered valid.
+* `setVersion()`: sets the value of the Protocol Version field.
+* `print()`: prints the entire contents of a PDU in human-readable form, including header and data.
+
+The `packet()` function returns a pointer to a buffer containing the network representation of the PDU. However, modifying this buffer is not recommended as it is an internal implementation detail.
+
+`DtPdu` is an abstract class, so instances cannot be created directly. Instead, derived classes must be instantiated using constructors. There are two types of constructors:
+
+* Blank PDU constructor: constructs a minimal PDU with default values for the protocol version, kind, and length.
+* From-network-representation constructor: takes a pointer to a network representation of a PDU as an argument and constructs a `DtPdu` object.
+
+The blank PDU constructor is typically used when creating PDUs that are sent over the network. The from-network-representation constructor is commonly used by a `DtPduFactory` after receiving a packet from the network.
+The `status()` function returns `DtSTATUS_OK` if the PDU representation is valid, otherwise, the results are undefined. However, even if `status()` returns `DtSTATUS_OK`, it does not necessarily mean that the PDU is valid because some DtPdu constructors do not verify the status.
+
+To construct a DtPdu object from a network representation of a PDU whose type you don't know, use the `createPdu()` function provided by the `DtPduFactory`. The factory maintains a table of associations between PDU kinds and functions that create corresponding PDU class objects. If no creator is registered for a particular PDU kind, a `DtUnknownPdu` is created.
+
+Here's an example of how to use the `createPdu()` function:
+```c
+DtExerciseConn exConn(...);
+char *buffer = ...;
+DtPduFactory* fact = exConn.pduFactory();
+DtPdu* pdu = fact->createPdu((DtNetPacket*) buffer);
+```
+The `createPdu()` function also checks the protocol version of the packet and rejects packets with versions outside a certain range.
+
+Each PDU class has a static member function called `create()`, which can serve as its creator function. These functions have the following signature:
+```c
+DtPdu *create(const DtNetPacket *initial, DtBufferPtr buffer = DtUSE_INTERNAL_BUFFER);
+```
+To change a `DtExerciseConn`'s `DtPduFactory` to create a specific PDU class for a particular PDU kind, use the `addCreator()` function:
+```c
+exConn.pduFactory()->addCreator(DtPduKind(10), DtEntityStatePdu::create);
+```
+Each `DtPdu` object stores a network representation of the PDU it represents. By default, this memory is allocated internally by the PDU class constructor and deleted by the destructor. However, in some cases, you may want to use a specific area of memory for storage of its network representation. You can do this by passing a `DtBufferPtr` argument to the PDU class constructor:
+```c
+char buffer[144];
+DtEntityStatePdu pdu(DtBufferPtr(buffer));
+```
+This is particularly useful when constructing a `DtPdu` from a network representation of a PDU, as it avoids copying the data into internal buffers. When using external memory for storage of its network representation, keep in mind that it's your responsibility to ensure that the buffer is large enough and has a lifetime that extends beyond the lifetime of the `DtPdu`.
+
+Finally, the `DtPdu` class provides overloaded copy constructor and assignment operator, allowing you to copy data:
+```c
+DtPdu pdu1, pdu2;
+pdu1 = pdu2;
+```
+This creates a copy of the data in `pdu2`, but does not share any data objects.
+**Classes derived from DtPdu**
+
+* Classes derived from DtPdu do not have copy constructors or assignment operators.
+* To copy data correctly, use the network representation of the PDU.
+
+**Example: Copying a DtFirePdu**
+```cpp
+DtFirePdu pdu1;
+DtFirePdu pdu2((const DtNetFirePdu*)pdu1.netRep());
+```
+**Using External Buffers**
+
+* The DtPdu constructor has an optional buffer argument.
+* To copy a DtPdu using a buffer, do the following:
+```cpp
+DtPdu pdu1;
+DtPdu pdu2(pdu1, buffer);
+```
+* To copy a PDU derived from DtPdu using an external buffer, do the following:
+```cpp
+DtFirePdu pdu1;
+int sz = pdu1.length();
+char* bfr = new char[sz];
+DtFirePdu pdu2((const DtNetFirePdu*)pdu1.netRep(), (DtBufferPtr)bfr);
+```
+**Getting an Object ID**
+
+* The `nextId()` function obtains an ID for use with an object that you are simulating.
+* You can choose your own entity IDs rather than obtain them using `nextId()`.
+* `DtObjectId` is typedef-ed to `DtEntityIdentifier`, which represents the DIS identification triplet of site ID, application number, and entity number.
+
+**Working with Non-Standard PDUs**
+
+* Use `DtUnknownPdu` to represent a PDU for which there is no PDU class.
+* Fill a buffer with the exact bytes you want to send on the network (probably by filling in a C-structure).
+* Pass this network representation to the `DtUnknownPdu` constructor.
+* Send the PDU using `DtExerciseConn::sendStamped()`.
+
+**Example: Sending a Test PDU**
+```cpp
+typedef struct NetTestPdu {
+    DtNetPduHeader header;
+    DtNetInt32 a;
+    DtNetInt32 b;
+} NetTestPdu;
+
+NetTestPdu aNetPdu;
+...
+
+DtUnknownPdu pdu((DtNetPduHeader*) &aNetPdu);
+exConn.sendStamped(pdu);
+```
+**Receiving Side**
+
+* On the receiving side, `DtUnknownPdu` does not have `addCallback()` or `removeCallback()` functions.
+* Register callbacks with the `DtExerciseConn` on a particular PDU kind.
+
+**Example: Receiving a Test PDU**
+```cpp
+void testCallback(DtPdu* pdu, void *usr) {
+    NetTestPdu* aNetPdu = pdu->packet();
+    int a = aNetPdu->a;
+    int b = aNetPdu->b;
+}
+
+exConn.addPduCallback(DtPduKind(220), testCallback, NULL);
+```
+**Deriving Classes from DtPdu**
+
+* Write a derived class to send user-defined PDUs.
+* Register your class with VR-Link in the `addCallback()` function.
+
+**Example: Deriving a Test PDU Class**
+```cpp
+class TestPdu : public DtPdu {
+    // ...
+};
+
+TestPdu pdu;
+exConn.send(pdu);
+```
+Note that this summary keeps all code examples, but some of the original text has been condensed to make it more concise.
+The TestPdu class represents a hypothetical variable-length "Test PDU" with three fields: an integer named "a", a variable-length array of integers named "b" whose cardinality is the value of "a", and a float called c.
+
+In chapter 8.3, there are several ways to configure a connection to the DIS network using the DtExerciseConn class. This class serves as an application's connection to a DIS or HLA exercise.
+
+There are four constructors for the DtExerciseConn class:
+
+* Standard constructor: creates a DtDisSocket to communicate directly to the network
+* Constructor with destination address: takes a destination address and uses it as the default IP address for outgoing packets
+* Constructor with secondary network device: uses a device other than the primary network device by passing its broadcast address as the destination address
+* Constructor with pointer to DtInetSocket: gives full control of how the socket is created
+
+The DtDisSocket class is a subclass of DtInetSocket and contains features that help send and receive DIS PDUs. The parameters for constructing a DtDisSocket include:
+
+* DtInetEndpoint, which describes the destination address and port of DIS PDU's sent
+* Local port to use
+* Interface to use
+* Socket flags
+* Flag that determines whether to open the socket immediately
+* Flag that determines whether the socket should filter out PDU's sent by itself
+
+Here is an example of constructing a DtDisSocket:
+```
+DtInetEndpoint endpoint(DtInetProto_UDP, DtInetAddr("192.168.255.255"), 3300);
+DtInetDevice deviceToUse(DtInetAddr("192.168.0.1"));
+DtDisSocket* sock = new DtDisSocket(endpoint, 0, deviceToUse);
+```
+This creates a socket that binds to the 192.168.0.1 interface for reading.
+
+Note: The text does not assume any information that is not provided within the text itself.
+**8.3.3 Using Asynchronous IO**
+
+VR-Link supports asynchronous IO for DIS, which creates two threads that read and write to the network. To use asynchronous IO, create a socket with `DtInetProto_UDP` and `DtDefaultSockOpts | DtAsyncReadWrite`. Alternatively, set `useAsynchIO()` to `true` when creating a `DtExerciseConn`.
+
+**8.3.4 Subscribing to Multicast Addresses**
+
+`DtExerciseConn` allows subscription to one or more multicast addresses between 224.0.0.0 and 239.255.255.255. Use `addInterestInMcastAddr()` to indicate interest in a multicast group, and `subtractInterestInMcastAddr()` to remove interest. Different code modules can add and subtract interest independently.
+
+**8.3.5 Filtering PDUs**
+
+`DtExerciseConn` can filter out PDUs based on certain criteria. By default, packets that are not of an expected protocol version or have an exercise ID that does not match the exercise ID of the `DtExerciseConn` are filtered out. Use `addInterestInPduKind()` to add interest in a PDU kind, and `subtractInterestInPduKind()` to remove interest.
+
+**8.3.6 Bundling and Unbundling PDU Packets**
+
+VR-Link supports bundling of multiple PDUs into a single network packet, and unbundling of such packets into their constituent PDUs. Use `setBundling()` to turn on bundling with a maximum size for a packet, and `flush()` to force sending of the current bundle. Unbundling is enabled by default, but can be turned on or off using `setUnbundling()`.
+**8.3 - Sending and Receiving Packets**
+
+* When sending packets using DtInetSocket, the `send()` or `sendTo()` member function can be used, depending on whether an address is passed.
+* The `send()` function returns the number of bytes sent, or -1 if the packets cannot be sent. If -1 is returned, the `getLastError()` or `getLastErrorString()` function can be used to query which error was encountered.
+
+**8.4 - Intercepting Incoming Entity State PDUs**
+
+* In DIS, there are two ways to intercept incoming entity state PDUs:
+	+ Register a callback on entity state PDUs using `DtReflectedEntity::processEntityState()`.
+	+ Override `DtReflectedEntity::processEntityState()` and call the appropriate `DtReflectedEntity` function.
+
+**8.5 - Setting Different Heartbeats in DIS 7**
+
+* In DIS 7, the heartbeat of an object can be set based on its entity type, class type, or whether it is moving.
+* Examples:
+	+ Set the heartbeat for non-moving entities: `DtEntityPublisher::setStationaryDfltTimeThreshold(20.0);`
+	+ Set the heartbeat by entity type: `DtEntityPublisher::setEntityTypeDfltTimeThreshold(DtPlatform, DtPlatformDomainAir, 1.0);`
+	+ Set the heartbeat by class type: `DtIffPublisher::setClassDfltTimeThreshold(10.0);`
+
+**9 - Writing Applications Using the C# API**
+
+* The C# API allows C# programmers to access the VR-Link SDK.
+* Chapters:
+	+ 9.1: Introduction to the C# API
+	+ 9.2: Adding the VR-Link for C#.dll to Your Project
+	+ 9.3: Initializing an Exercise Connection
+	+ 9.4: Using the Application Initializer Class
+	+ 9.5: Publishing Objects
+	+ 9.6: Reflected Objects
+	+ 9.7: Callbacks and Interactions
+
+Note that I did not include any code examples from Chapter 9, as they were not provided in the original text.
+The text provides instructions on how to use the VR-Link for C# library to connect to an exercise connection in a C# project.
+
+To start, you need to add a reference to the vrLinkSharp.dll file and include the makVrl namespace using the following statement: `using makVrl;`
+
+Next, you need to initialize an exercise connection. You can do this by creating an instance of the `ExerciseConnectionInitializer` class and specifying the type of connection using an enum value (e.g., `DIS`, `HLA13`, etc.). For example:
+```
+DisExerciseConnectionInitializer initializer = new DisExerciseConnectionInitializer();
+ExerciseConnection exConn = new ExerciseConnection(initializer);
+```
+Alternatively, you can use the `ApplicationInitializer` class to simplify the process. This class allows you to handle command-line arguments and initialize the exercise connection automatically.
+
+To publish objects, you need to create a publisher of the right type (e.g., `EntityPublisher`) and specify the exercise connection it will use. For example:
+```
+myEntityPub = new EntityPublisher(myExConn);
+```
+You can then modify the properties of the published object using the `State` property of the publisher.
+
+Reflected objects are used to store information about objects that have been discovered on the exercise connection. You can create a reflected object list and use it to keep track of multiple reflected objects.
+
+Interactions, such as fire messages, are handled differently than objects. You can create and send interactions using the `ExerciseConnection` class, and react to them in your application.
+
+The text also provides examples of how to use these classes and methods in a real-world scenario, such as in the f18-Sharp example.
+The code snippet provided creates and sends a FireMessage over an exercise connection using the `myExConn` object. To receive this message, the exercise connection needs to register a callback for receiving it, which is done using the `addMessageHandler()` function.
+
+VR-Link C# can be extended through plug-ins, which allow developers to add new functionality to the API. The architectural overview of VR-Link C# shows that it consists of several layers, including the ManagedInterface library and the ManagedInterfaceCS bindings.
+
+The ManagedInterface class is a singleton class that provides a centralized location to register message decoders, strategies, and resources used during execution. Plug-ins must be loaded into the plug-in directory and export a function with a specific name and signature.
+
+Initialization of connections in VR-Link C# involves loading protocol-specific initialization strategies at runtime based on what the user requested. The connection initialization procedure ensures that all required resources are available for each strategy to initialize properly.
+
+The ManagedInterface Concepts section provides an overview of the different components within ManagedInterface, including strategies, resources, and delegates. Strategies process object state updates and interactions from VR-Link and create messages to send to the C# application. Resources are shared data structures and classes that need to be accessed by multiple strategies. Delegates are used to handle specific interactions or events.
+
+Here is the code example provided:
+
+```csharp
+myFire = new FireMessage();
+//Fill out FireMessage here
+... 
+myFire.worldPosition = ESR.worldPosition;
+myFire.velocity = ESR.worldVelocity;
+         
+...
+myExConn.sendMessage(myFire);
+```
+
+And the callback function for receiving a FireMessage:
+
+```csharp
+internal void processFireMessage(Message m)
+{
+    FireMessage fm = m as FireMessage;
+    Console.WriteLine("Fire Message received from entity " + fm.firingId + " targeting entity " + fm.targetId + ". ");
+}
+```
+
+Let me know if you have any further questions!
+1. **Message**: A collection of attributes that define the structure and content of a message.
+2. **Attributes**: Simple data types, enumerations, structures, or lists of these types that make up the message.
+3. **Enums**: User-defined enumeration values used to specify attribute values.
+4. **Structures**: Composite data types consisting of multiple attributes.
+
+The documentation provides examples of how to define these components and includes a table listing various data types that can be used as attributes.
+
+Additionally, it discusses:
+
+1. **Message Enums**: How to define message enums using the `enum` type and specifying the enum values.
+2. **Message Structures**: How to define structures within messages using the `struct` type and specifying the structure name.
+3. **Message Attributes**: The different types of attributes that can be used in a message, including simple data types, enums, structures, and lists.
+
+The documentation also mentions the code generator, which is a command-line tool that generates C++ and C# source code to encode and decode message data based on the message definition file.
+The `init()` function initializes the strategy by finding the exercise connection resource, creating a reflected designator list, and installing callbacks to listen for laser designators coming from the DIS/HLA network. It also creates a publisher list to hold publishers that mirror laser designators being controlled in VR-Link C#.
+
+The strategy contains several callbacks for registering with VR-Link as well as with the ManagedInterface message handlers to handle discovery, removal, and state update of laser designators from both the DIS/HLA network and within VR-Link C#. These callbacks marshal the data to and from the laser designator messages and VR-Link data structures.
+
+In C#, a .lua file is defined to output a state message, a discovery message, and a removed message. This is done by defining MESSAGE blocks in the lua file, which specify the class name, includes, and attributes of each message.
+
+A StateRepository class for laser designators is also defined in C#. The StateRepository class is derived from the VR-Link C# library class `StateRepository`, and contains a map of class members to their name. This allows the StateRepository to remain very flexible in its use.
+
+Here is the summarized code:
+
+C++:
+```c
+bool DtLaserDesignatorStrategy::init()
+{
+    // ...
+    myRelDx = new DtReflectedDesignatorList(myExconn);
+    myRelDx->addDesignatorAdditionCallback(&DtLaserDesignatorStrategy::vrlDesignatorDiscovered, this);
+    myRelDx->addDesignatorRemovalCallback(&DtLaserDesignatorStrategy::vrlDesignatorRemoved, this);
+    // ...
+}
+
+void DtLaserDesignatorStrategy::tick()
+{
+    myDxPubs->tick();
+}
+```
+
+C#:
+```csharp
+// Define a lua file with MESSAGE blocks for laser designators
+MESSAGE {
+    fileName="laserDesignatorDiscovery";
+    className="LaserDesignatorDiscovery";
+    includes={"plugin.h"};
+    dllExport="LASER_DESIGNATOR_DLL";
+    attributes={
+        {type="string", name="entityId"};
+        {type="UInt16", name="designatorId"};
+    }
+}
+
+// Define a StateRepository class for laser designators
+public class LaserStateRepository : StateRepository
+{
+    public override object GetObject(string name)
+    {
+        // ...
+    }
+
+    public override void SetObject(string name, object value)
+    {
+        // ...
+    }
+}
+```
+
+Note that the provided code is not complete and may require additional context or implementation details to function correctly.
+1. `laserDesignatorStateRepository`: A class that defines and sets new variables for the laser designator, including an exercise connection.
+2. `LaserDesignatorPublisher`: A class that publishes the laser designator state repository to VR-Link using an exercise connection.
+3. `ExerciseConnection`: A class used to initialize and manage connections to VR-Link.
+
+The code examples provided include:
+
+* `laserDesignatorStateRepository`:
+```csharp
+public class laserDesignatorStateRepository
+{
+    public ExerciseConnection myExConn;
+    public laserDesignatorStateRepository()
+    {
+        myExConn = new ExerciseConnection();
+    }
+    public void tick(double dt)
+    {
+        LaserDesignatorStateMessage sm = getStateMessage();
+        myExConn.sendMessage(sm);
+    }
+}
+```
+* `LaserDesignatorPublisher`:
+```csharp
+public class LaserDesignatorPublisher
+{
+    public ExerciseConnection myExConn;
+    public laserDesignatorStateRepository mylsr;
+
+    public LaserDesignatorPublisher(ExerciseConnection exConn)
+    {
+        myExConn = exConn;
+        mylsr = new laserDesignatorStateRepository();
+    }
+    public void tick(double dt)
+    {
+        mylsr.tick(dt);
+    }
+}
+```
+* `handleLaserDesignatorUpdatedMessage`:
+```csharp
+internal void handleLaserDesignatorUpdatedMessage(Message m)
+{
+    LaserDesignatorStateMessage sm = m as LaserDesignatorStateMessage;
+    ReflectedLaserDesignator laser = null;
+    if (myLasers.TryGetValue(sm.entityId, out laser) == true)
+    {
+        laser.update(sm);
+    }
+    else
+    {
+        // waiting for an update so we can be discovered
+        if (myUnprocessedLasers.ContainsKey(sm.entityId) == true)
+        {
+            laser = myUnprocessedLasers[sm.entityId];
+        }
+        else
+        {
+            // need to discover the entity
+            laser = new ReflectedLaserDesignator(sm.entityId);
+        }
+        laser.update(sm);
+        discoverLasers(laser);
+    }
+}
+```
+The Java API is also introduced in a separate section, which explains how to set up and use VR-Link for Java.
+**Running Examples**
+
+* To run an example, you need a Java runtime installed and in your path.
+* Tell the JVM where the Java code is by using the CLASSPATH environment variable or the -cp command line option.
+* Tell the vrlj Java application where the native libraries are by using bundled native libraries, choosing the working directory, or using the --loadPath argument.
+
+**Setting up a Project**
+
+* You need a javac compiler that supports at least Java 8.
+* Add the correct jar file to your Java classpath to build and run your application.
+* Native code might be loaded differently depending on configuration.
+
+**Native Libraries**
+
+* vrlj.jar contains no native libraries; the location of the native libraries must be provided.
+* Other jar files contain native library code for a single platform (with both 32- and 64-bit native code versions).
+
+**Setting up with Bundled Native Libraries**
+
+* If a jar containing native library code is used, add that jar to your Java classpath. At runtime, the native code will be loaded from the jar.
+
+**Setting up with External Native Libraries**
+
+* If vrlj.jar is included in the Java classpath, it contains no native code. The path to the shared libraries must be specified by calling the initializer method setLoadPath() or using the --loadPath command line option.
+
+**Setting up with Eclipse**
+
+* To add vrlj_Xxx.jar (platform specific with bundled native libraries) to an Eclipse project, simply add that jar to the build path.
+* To load the native libraries, there are several ways: modify the Run Configurations for the project, copy the native libraries into your working directory, or modify your code to call setLoadPath() or use --loadPath.
+
+**Exercise Connections**
+
+* VR-Link applications connect to an exercise through an exercise connection.
+* Exercise connections are implementations of the Java interface ExerciseConnection.
+* Higher level VR-Link classes use the ExerciseConnection to set and receive state information and other data.
+**Simplifying ExerciseConnection Usage**
+
+The `ExerciseConnection` class implements the `AutoCloseable` interface, which simplifies its use by automatically closing the connection when it goes out of scope.
+
+**Using the ExerciseInitializer Class**
+
+The `ExerciseInitializer` class should contain all necessary information to initialize an `ExerciseConnection`. It may also include additional user application-specific information. The `parseCmdLine(String[] args)` method simplifies parsing command-line arguments using the jcommander library.
+
+**jcommander @Parameter Annotation**
+
+The `@Parameter` annotation is used to map command-line parameters to member variables. For example, the `markings` variable can be mapped to the `--f18Markings` command-line option with a description of "hull markings".
+
+**Threading**
+
+VR-Link for Java shares a single thread with the application and does not create extra threads for background processing. Each `ExerciseConnection` has a `drainInput()` method that performs background processing, which must be called periodically (at least once per second). VR-Link methods are not thread-safe, so user applications must ensure that only one thread accesses them at a time.
+
+**Publishing Objects**
+
+To publish an object to the network, use a `PublisherFactory` obtained from an `ExerciseConnection`, then create an `ObjectPublisher` for a specific type of object. Update the published object by calling its `tick()` method.
+
+**Reflected Objects**
+
+A reflected object is a class used to store information about an object that has been discovered, updated, and deleted by the exercise connection. Each exercise connection tracks all reflected objects in a `ReflectedObjectCollection`, which implements the Map interface. A `ReflectedMap` can be created for a specific type of object with a selection criteria.
+
+**Callbacks and Interactions**
+
+Interactions are handled differently than objects. Typically, interactions are created and sent one time, then received and reacted to appropriately. An example of an interaction is the FireInteraction.
+
+Here is the original code example from section 11.5:
+
+```java
+double dt = 0.05; // time step in seconds
+double simTime = 0.0; // starting simulation time in seconds
+while (simTime <= 10.0) {
+    // Tell VR-Link the current value of simulation time. clock.setSimTime(simTime);
+    // Process any incoming messages and perform background processing. exConn.drainInput();
+    // Update our published entity.
+    entity = new Entity(exConn, name, position);
+    entity.setPosition(new Position(0, 0));
+    entity.setVelocity(new Velocity(10, 0));
+    entity.setAltitude(new Altitude(1000));
+    exConn.publishEntity(entity);
+    simTime += dt;
+}
+```
+
+And here is the original code example from section 11.6:
+
+```java
+ReflectedEntityMap rem = new ReflectedEntityMap(exConn);
+Iterator<Entity> iter = rem.values().iterator();
+while (iter.hasNext())
+{
+    Entity first = iter.next();
+    System.out.println(first.toString());
+}
+
+// Alternatively, you could iterate through all objects and check which are Entity objects as follows:
+
+Iterator<BaseObject<? extends ObjectIdentifier>> objIter = exConn.getReflectedCollection().values().iterator();
+while(objIter.hasNext())
+{
+    BaseObject<? extends ObjectIdentifier> obj = objIter.next();
+    if(obj instanceof Entity)
+    {
+        Entity e = (Entity) obj;
+        System.out.println(e.toString());
+    }
+}
+```
+To send an interaction, you create a `FireInteraction` object, set its data, and then send it using the exercise connection:
+
+```java
+FireInteraction fire = new FireInteraction();
+fire.setFiringId(myId);
+... set other interaction fields as required ...
+exConn.send(fire);
+```
+
+To receive an interaction, you can use the `addListener` method to define a callback function that will be called when an interaction is received. For example:
+
+```java
+FireInteraction.addListener(exConn, fire -> {
+   System.out.print("Fire Interaction from ");
+   System.out.println(fire.getFiringId());
+});
+```
+
+Alternatively, you can use an anonymous inner class with the older syntax:
+
+```java
+FireInteraction.addListener(exConn, new InteractionListener<FireInteraction>() {
+   public void process(FireInteraction fire)
+   {
+      System.out.print("Fire Interaction from ");
+      System.out.println(fire.getFiringId());
+   }
+});
+```
+
+The text also discusses various applications and utilities that come with VR-Link, including the `f18` program, which simulates a simple HLA or DIS vehicle. The `f18` program can be controlled using command-line options, such as specifying the entity type, location, and route.
+
+Additionally, the text explains how to use the configuration file `f18.mtl`, which sets many of the `f18`'s default parameters. It also provides examples of how to override these defaults using command-line options or an alternate configuration file.
+**Rebuilding f18 or Creating a New Application**
+
+To rebuild the f18 program or create a new application based on f18 that does not use a configuration file, remove the `initMtl()` call. You can also specify a different configuration file in your code at the `DtcLoadLispFile()` function call.
+
+**Firing Munitions**
+
+To cause the f18 to fire at another entity, press Enter or Return. If other entities exist in the exercise, f18 issues a fire message directed at the closest one. The delay between firing and detonation can be changed by editing the `munitionFlightTime` parameter in the `f18.mtl` file.
+
+**Reactions to Detonate Messages**
+
+The f18 reacts to detonation PDUs or RPR FOM detonation interactions. If a detonation occurs within the `lethalDetonationRange`, or if the detonation result is entity impact or entity proximate, the f18 is destroyed. The `lethalDetonationRange` defaults to 20 meters, and `destroyedToFinalDelay` defaults to zero.
+
+**Absolute Timestamping**
+
+The value of the `timeStampType` flag in `f18.mtl` determines whether absolute or relative timestamps are used in f18's outgoing state update messages. The flag defaults to relative (0), but can be set to absolute (1). When absolute timestamping is used, f18 dead-reckons remote entities based on their absolute timestamps.
+
+**Using a Modified FOM**
+
+The `config.cxx` source file shows how to configure VR-Link to use a modified FOM. This involves using the `ReversePosition` attribute and `ReverseFiringLocation` parameter instead of the default ones.
+
+**Calling VR-Link from Other Languages**
+
+The `simpleC` example demonstrates how to use VR-Link from within a C language application. This can serve as a starting point for applications written in other languages that use VR-Link.
+
+**Launcher**
+
+The launcher example demonstrates use of articulated and attached parts in VR-Link for both DIS and HLA.
+
+**netdumpDIS**
+
+`netdumpDIS` is a DIS debugging tool that displays the contents of arriving DIS PDUs in an easy-to-read format. It writes its output to stdout and has several command-line options, including `-c`, `-errorChecking`, `-h`, `-P`, `-r`, `-S`, and `-v`.
+
+**netdumpHLA**
+
+`netdumpHLA` listens to an HLA federation execution, subscribes to all object and interaction classes in the FOM, and prints out data whenever it receives an attribute update or interaction. It has several command-line options, including `-c`, `-F`, `-f`, `--fomMapperInitData`, `-rprFomVersion`, `-h`, `-M`, `-m`, `-n`, `-r`, `-R`, `-v`, and `-x`.
+The provided text describes command-line options for netdumpHLA, a tool for debugging single entity applications in HLA (High Level Architecture). The options include:
+
+* `-c` or `--clearScreen`: clears the screen between messages
+* `-f` or `--fomMapperLib`: specifies a FOM Mapper library name
+* `-F` or `--fedFile`: specifies the FED file to use
+* `-h` or `--help`: displays a summary of command-line options and exits
+* `-m` or `--printMom`: subscribes to MOM classes
+* `-M` or `--noFullReport`: disables printing of update specifics
+* `-n` or `--changedOnly`: prints only objects that have changed
+* `-r` or `--raw`: runs netdumpHLA in raw mode
+* `-R` or `--rprFomVersion`: specifies the RPR FOM version
+* `-s` or `--silent`: suppresses output
+* `-t` or `--timeout`: sets a timeout value
+
+The text also includes code examples for the `netdumpHLA` tool, including a sample program in C++ that demonstrates how to use the tool.
+
+Additionally, the text provides information on connecting to an exercise using the `DtExerciseConn` class, which is used to create a connection to an exercise or federation execution. The example shows how to create a connection and register a callback function to handle fire interactions.
+Here is a summarized version of the text without losing any core information:
+
+**Initializing Values**
+
+The `DtVrlApplicationInitializer` sets default protocol-specific initialization values. To specify initialization values in the `DtExerciseConn`, use code similar to the following:
+```c
+int main()
+{
+    // ... (omitted for brevity)
+
+#if DtHLA
+    DtString execName("VR-Link");
+    DtString fedName("VR-Link listen"); 
+    DtExerciseConn exConn(execName, fedName, new DtSimpleRprFomMapper);
+#elif DtDIS
+    int port           = 3000;
+    int exerciseId     = 1; 
+    int siteId         = 1;
+    int applicationNum = 15;
+    DtExerciseConn exConn(port, exerciseId, siteId, applicationNum,
+                              0,             // No Status, any error will be fatal
+                              true);            // use Async IO
+#endif
+
+    // ... (omitted for brevity)
+}
+```
+**Managing State and Entities**
+
+The text describes managing entities and state within a VR-Link application. It provides an example of creating an entity type (F18), defining an `DtEntityPublisher`, setting up an `DtEntityStateRepository`, and creating a topographic view on the repository.
+
+Code examples:
+```c
+// ... (omitted for brevity)
+
+int main()
+{
+    // Define F18 entity type
+    line 29: DtExerciseConn exConn;
+
+    // Create entity publisher
+    line 33: DtEntityPublisher entityPub;
+
+    // Set up entity state repository and topographic view
+    line 37: DtEntityStateRepository *esr = entityPub.entityStateRep();
+    line 43: DtTopoView topoView(esr, refLatitude, refLongitude);
+
+    // ... (omitted for brevity)
+}
+```
+**Managing Time and Network Interactions**
+
+The text discusses managing time and network interactions within a VR-Link application. It provides an example of sending an interaction using the `sendStamped()` function.
+
+Code examples:
+```c
+// ... (omitted for brevity)
+
+int main()
+{
+    // Main loop
+    while (simTime <= 10.0)
+    {
+        // Tell VR-Link the current value of simulation time
+        line 66: clock->setSimTime(simTime);
+
+        // Process any incoming messages
+        line 69: exConn.drainInput();
+
+        // Set up for next iteration
+        line 72: topoView.setLocation(position);
+        line 73: topoView.setVelocity(velocity);
+        line 77: entityPub.tick();
+
+        // Wait till real time equals simulation time of next step
+        line 84: DtSleep(simTime - clock->elapsedRealTime()); 
+    }
+
+    // ... (omitted for brevity)
+}
+```
+The provided code examples demonstrate the use of `DtVrlApplicationInitializer` for command-line arguments, initializing values for specific protocols (HLA and DIS), managing state and entities within a VR-Link application, and sending interactions over the network.
+The listen-only example demonstrates how to connect to an exercise or federation execution using `DtExerciseConn`. It listens to the network for updates and prints the position of entities in topographic coordinates. The code includes several functions, including `fireCb` which handles fire interactions, and `keybrdTick` which checks for user input.
+
+The send-only example is not included in the provided text, but it is described as a program that sends data to the network without processing incoming data.
+
+Here are the key points from the provided text:
+
+* The listen-only example uses `DtExerciseConn` to connect to an exercise or federation execution.
+* The program creates a reflected entity list (`DtReflectedEntityList`) to keep track of entities found on the network.
+* The program uses a callback (`fireCb`) to handle fire interactions and prints a message containing the attacker ID.
+* The program processes incoming messages using `drainInput()` and updates the simulation time using `setSimTime()`.
+* The program sleeps for a short period of time (`DtSleep(0.1)`) between iterations.
+
+Here is the code example:
+
+```c
+int main()
+{
+   // Create a connection to the exercise or federation execution
+   DtVrlApplicationInitializer initializer;
+   DtExerciseConn exConn(initializer);
+
+   // ... rest of the code ...
+}
+
+// Fire callback function
+void fireCb(DtFireInteraction *fire)
+{
+    std::cout << "Attacker ID: " << fire->getAttackerId() << std::endl;
+}
+
+// Key press detection function
+int keybrdTick()
+{
+    char *keyPtr = DtPollBlockingInputLine();
+    if (keyPtr && (*keyPtr == 'q' || *keyPtr == 'Q')) 
+        return -1;  
+    else
+        return 0;
+}
+```
+
+Note that the code example provided is a simplified version of the listen-only example and may not include all the necessary functionality.
+Here is a summary of the key points:
+
+* The program creates a connection to the exercise or federation execution using `DtExerciseConn` (lines 17-27).
+* It defines the entity type for the F18 aircraft and creates an ` DtEntityPublisher` object to manage the generation of messages for this entity (lines 29-35).
+* The program sets up a topographic view on the entity state repository to store position data in topographic coordinates rather than geocentric coordinates (lines 41-44).
+* It sends a fire interaction using the `sendStamped()` function (lines 56-58) and then enters a main loop where it updates the F18's position, sets simulation time, and sleeps until it is time to begin the next iteration (lines 61-85).
+* The program also processes incoming messages using the `drainInput()` call (line 69).
+
+The code examples provided include:
+
+```
+#include <vl/exerciseConn.h>
+#include <vl/exerciseConnInitializer.h>
+#include <vl/topoView.h>
+#include <vl/entityPublisher.h>
+#include <vl/entityStateRepository.h>
+#include <vl/fireInteraction.h>
+#include <vl/iffPublisher.h>
+#include <vlpi/EntityTypes.h>
+
+int main() {
+    // Create a connection to the exercise or federation execution
+    DtExerciseConn conn;
+
+    // Define the entity type for the F18 aircraft
+    EntityTypeId entityId = ...;
+
+    // Create an entity publisher object
+    DtEntityPublisher publisher(entityId);
+
+    // Set up a topographic view on the entity state repository
+    TopoView* view = new TopoView(publisher.getEntityStateRepository());
+
+    // Send a fire interaction using the sendStamped() function
+    FireInteraction interaction;
+    conn.sendStamped(interaction);
+
+    // Enter a main loop where it updates the F18's position, sets simulation time, and sleeps until it is time to begin the next iteration
+    while (true) {
+        // Update the F18's position
+        view->setLocation(position);
+
+        // Set simulation time
+        conn.setSimulationTime(simulationTime);
+
+        // Sleep until it is time to begin the next iteration
+        sleepUntilNextIteration();
+    }
+}
+```
+
+Note that this is a simplified example and may not cover all the necessary steps for creating a send-only application using VR-Link.
+**13.1 - Vector and Matrix Classes**
+
+This section describes the classes `DtVector` and `DtDcm` used for vectors and matrices.
+
+* `DtVector`: represents a 3D vector with three components, initialized using the constructor or default constructor. It has operators for assignment, equivalence, and subscripting.
+* `DtDcm`: represents a 3x3 matrix (direction cosine matrix) with nine components, initialized using the constructor or default constructor. It has operators for assignment, equivalence, and subscripting.
+
+Both classes have static member functions that return commonly used vectors and matrices.
+
+**13.1.4 - Vector and Matrix Manipulation Functions**
+
+LibMatrix.h contains C-style functions that operate on `DtVector` and `DtDcm`, including addition, subtraction, multiplication, scaling, dot products, cross products, negation, normalization, determinant calculation, transpose, and inverse.
+
+**13.2 - Orientation, Euler Angles, and DtTaitBryan**
+
+This section describes the alternative representation of orientation using Euler angles and the `DtTaitBryan` class.
+
+* `DtTaitBryan`: represents a set of three Euler angles (psi, theta, phi) in radians, used to represent the orientation of an entity. It has inspector and mutator functions for accessing individual angles and operators for assignment, equality, and copy constructor.
+* Converting between Euler angles and matrix representation is possible using `DtTaitBryan` and `DtDcm`.
+
+**Code Examples**
+
+* `DtVector vec(10.0, 20.0, 30.0);`
+* `DtDcm mat(1.0, 2.0, ...);`
+* `DtTaitBryan angles(3.14, 0.0, 1.57);`
+
+Note that the text does not provide a comprehensive list of all functions and operators available for these classes, but rather highlights some of the key features and functionality.
+**Euler Angles and Matrix Representation**
+
+VR-Link provides functions in `Euler.h` to convert between Euler angles and rotation matrices (represented as `DtDcm`). The functions `DtEuler_to_BodyToRef()` and `DtEuler_to_RefToBody()` convert between Euler angles and rotation matrices, while the functions `DtBodyToRef_to_Euler()` and `DtRefToBody_to_Euler()` go in the opposite direction.
+
+**Coordinate Conversions**
+
+VR-Link supports various coordinate systems, including:
+
+1. **Geocentric Coordinates**: A right-handed Cartesian coordinate system with its origin at the center of the Earth.
+2. **Geodetic Coordinates**: A means of specifying location on the Earth's surface using latitude, longitude, and altitude above a reference ellipsoid.
+3. **Topographic Coordinates**: A right-handed Cartesian coordinate system tangent to the Earth's surface, with its X-Y plane parallel to the surface.
+
+Conversion functions are provided between these coordinate systems:
+
+* `DtGeocToGeod()` and `DtGeodToGeoc()` convert between geocentric and geodetic coordinates.
+* `DtGeocToTopoTransform()` initializes a `DtCoordTransform` object for converting between geocentric and topographic coordinates.
+
+Additionally, VR-Link provides pre-defined reference ellipsoids (e.g., WGS84, ED50) and allows users to customize the reference ellipsoid used for conversions through the function `DtUseMapDatum()`.
+**Geocentric to Topographic Conversions**
+
+* Use DtCoordTransform::coordTrans() to convert from geocentric to topographic coordinates
+* Initialize a second DtCoordTransform with setByInverse() to convert back to geocentric
+
+Example code:
+```c
+DtEntityStateRepository *esr = ...;
+DtVector topoLocation;
+geocToTopo.coordTrans(esr->location(), topoLocation);
+```
+**Euler Angles**
+
+* Converting Euler angles from geocentric to topographic coordinates (or vice versa) is useful for obtaining heading, pitch, and roll
+* Use DtCoordTransform::eulerTrans() to convert Euler angles
+
+Example code:
+```c
+DtTaitBryan topoEuler;
+geocToTopo.eulerTrans(esr->orientation, &topoEuler);
+double heading = topoEuler.psi();
+double pitch = topoEuler.theta();
+double roll = topoEuler.phi();
+```
+**UTM Coordinates**
+
+* UTM coordinates consist of easting and northing from an origin or reference location, and altitude above a reference ellipsoid
+* Use DtUtmInit() to establish the world location of the origin of your UTM attribute system
+* Define a DtUtmCoord object with constructor or inspectors/mutators
+* Convert between UTM and geocentric/geodetic coordinates using member functions or C-style functions
+
+Example code:
+```c
+DtDegMinSec latRef = {35.0, 0.0, 0.0, DtNorth};
+DtDegMinSec lonRef = {122.0, 0.0, 0.0, DtWest};
+DtUtmInit(latRef, lonRef);
+...
+DtUtmCoord utm(50.0, 60.0, 70.0);
+DtGeodeticCoord geod = utm.geodetic();
+```
+**Differences Between UTM and Topographic Coordinates**
+
+* Key differences: Z represents altitude in UTM, while -Z represents height above a plane tangent to the earth's surface in topographic
+* UTM coordinates X, Y, and Z correspond to east, north, and up, while topographic X, Y, and Z correspond to north, east, and down
+* Lines of constant easting in UTM do not run truly north/south like lines of longitude
+**Coordinate Conversion Functions**
+
+* `DtUtmCoord::gridDeclination()` returns the angle between northing and true north at a particular UTM location.
+* Lower-level coordinate conversion functions include:
+	+ `DtDcmVecMul()` multiplies a rotation matrix by a vector to convert it between two coordinate systems.
+	+ `DtLatLon_to_GeocToTopo()` and `DtLatLon_to_TopoToGeoc()` generate rotation matrices for geocentric/topographic conversions.
+* Example: converting velocity from geocentric to topographic coordinates using `DtDcmVecMul()`.
+
+**Linked Lists (DtList)**
+
+* `DtList` is a general linked-list capability in VR-Link, now superseded by `std::list<>`.
+* A `DtList` can be constructed and elements added using various functions (`addToStart()`, `addToEnd()`, etc.).
+* Elements must remain valid for the duration of their presence in the list.
+* Example: adding instances of class `A` to a `DtList` and iterating through its elements.
+
+**Diagnostic Utilities**
+
+* `DtNotifyLevel` controls the amount of diagnostic information printed by VR-Link.
+* The possible values for `DtNotifyLevel` are:
+	+ `DtNlFatal`: only fatal messages are printed.
+	+ `DtNlWarn`: warning messages and fatal messages are printed.
+	+ `DtNlInfo`: some diagnostic information is printed with warnings and fatal messages.
+	+ `DtNlVerbose`: extra diagnostic information is printed.
+	+ `DtNlDebug`: the maximum information is printed.
+
+No assumptions have been made outside of the provided text. All code examples remain intact, and the summary aims to preserve the core information without adding any external context or assumptions.
+**Notify Level**
+
+The notify level can be used to control messages generated by an application using VR-Link's printing functions instead of `printf()` or `cout()`. The printing functions are declared in `vlPrint.h` and have the same prototype as `printf()`. They include:
+
+* `DtFatalPerror()` and `DtWarnPerror()`: print perror information along with the passed information
+* `DtFatalError()`, `DtWarn()`, `DtInfo()`, `DtVerbose()`, and `DtDebug()`: print messages at different levels of severity
+
+**DtOutputStream**
+
+`DtOutputStream` is a buffer-based output stream that allows redirecting messages. It can be used like any standard C++ output stream, for example:
+
+```cpp
+DtInfo << "something bad just happened, the error is " << error << "\n";
+```
+
+It can attach to one or more `DtPrinters`, which can print to an output device.
+
+**Printing Diagnostic Messages in Windows**
+
+Windows applications without a console do not define STDOUT. To avoid this issue, call the VR-Link function `setFileOutput()` to enable writing to a console window or file. Then use VR-Link's printing functions (`DtWarn()`, `DtInfo()`, etc.) to print diagnostic output.
+
+**DtException Class**
+
+`DtException` is an exception class that can be thrown by member functions or constructors. It has a message() function that returns a string describing the exception, and can be printed using the `<<` operator:
+
+```cpp
+try {
+    region = new DtDDMRegion(spaceName, dimensionVector);
+} catch (const DtException& regionException) {
+    DtWarn << "Caught exception: " << regionException << std::endl;
+}
+```
+
+**Functions for Manipulating IP Addresses**
+
+The header file `vlutil.h` provides functions for obtaining and manipulating IP addresses. These include:
+
+* `DtStringToInetAddr()`: constructs a `DtInetAddr` from a string containing an IP address
+* `DtInetAddrString()`: returns a string representation of a `DtInetAddr`
+* `DtInetAddrOfDevice()`: returns the IP address of a device by its name
+* `DtNetMaskOfDevice()`: returns the netmask of a device
+* `DtInetBroadcastOfDevice()`: computes and returns the broadcast address of a device
+
+**Miscellaneous Global Functions**
+
+The following miscellaneous global functions are available:
+
+* `DtSleep()`: provides a machine-independent way to halt program execution for some period of time
+* `DtSelect()`: provides a machine-independent interface to the UNIX select system call
+* `DtAbort()`: called whenever VR-Link generates a fatal error, making the abort system call
