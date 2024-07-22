@@ -38,13 +38,20 @@ class TcpServer:
         msg = msg[:-len(substring)]
         msg = msg[1:]
         # need to find a way to extract the latest question
-        question_embedding = model.encode(["who is king ryan of ryry land?"])   
+        # find the last occurence of the "content" which is the latest user prompt
+        prompt_index = msg.rfind('"content":')
+        # shift past content:
+        prompt_index += 10
+        # remove the special characters from behind
+        question_embedding = model.encode([msg[prompt_index:len(msg)-2]])   
         best_matches = KnnSearch(question_embedding, all_embeddings, k=5) # Play with this value, higher seems to result in inaccurate results
 
+        #construct the embedding text
         sourcetext = ""
         for i, (index, source_text) in enumerate(best_matches, start=1):
             sourcetext += f"{i}. Index: {index}, Source Text: {source_text}"
         
+        # add on the system prompt to the front of the msg
         sys_prompt_str = '[{"role": "system", "content": "Use this information if you are unable to provide an answer:' + sourcetext + '"},'
         msg = sys_prompt_str + msg
         data = json.loads(msg)
@@ -59,7 +66,6 @@ class TcpServer:
         async for part in await async_client.chat(model='llama3:8b-instruct-q6_K', messages=data, stream=True):
             writer.write(part['message']['content'].encode('utf-8'))
             await writer.drain()
-            #print(part['message']['content'], end='', flush=True)
         
         token_count = part['eval_count']
         time_ns = part['eval_duration']
@@ -77,7 +83,6 @@ class TcpServer:
             await self.server.serve_forever()
 
 if __name__== "__main__":
-    print("Server started")
     model = SentenceTransformer('all-MiniLM-L6-v2')
     def validate_ip(ip):
         ip_pattern = r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
@@ -93,4 +98,5 @@ if __name__== "__main__":
     svr.model = model
     all_embeddings = GenerateAllEmbeddings(os.path.dirname(__file__) + '\\compressed\\', model)
     svr.embeddings = all_embeddings
+    print("Server started")
     asyncio.run(svr.run())

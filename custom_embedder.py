@@ -1,6 +1,7 @@
 import os
 import ollama
 import numpy as np
+import nltk
 from sentence_transformers import SentenceTransformer
 from sklearn.neighbors import NearestNeighbors
 from mattsollamatools import chunker
@@ -73,7 +74,7 @@ def MakeQuery(user_prompt, all_embeddings, model):
         sourcetext += f"{i}. Index: {index}, Source Text: {source_text}"
 
     response = ollama.generate(
-        model= "llama3:8b-instruct-q6_K",
+        model= "phi3:3.8b-mini-4k-instruct-q6_K",
         prompt=user_prompt,
         system=f"Use this information only if you are unable to accurately provide an answer to the question: {sourcetext}",
         stream=False,
@@ -84,6 +85,7 @@ def MakeQuery(user_prompt, all_embeddings, model):
 
 
 if __name__ == "__main__":
+    nltk.download('punkt')
     model = SentenceTransformer('all-MiniLM-L6-v2')
     all_embeddings = GenerateAllEmbeddings(os.path.dirname(__file__) + '\\compressed\\', model)
 

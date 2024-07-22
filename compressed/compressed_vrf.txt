@@ -1,0 +1,167 @@
+Logo	VR-Forces Developer's Guide
+
+Search
+Product Design and API Documentation
+VR-Forces Back-end Examples
+Interface Content (interfaceContentSim)
+Table of Contents
+Creating a New Type of Interface Message
+How to Run the Example
+Usage
+Classes
+Plugin Entry Points
+The Interface Content example demonstrates the following:
+
+How to create a new interface content message
+How to install the interface content message in the factory
+How to send and receive the new interface content message
+Creating a New Type of Interface Message
+The Interface Content example creates a new type of VRF interface message class MyInterfaceContent which demonstrates how to send and receive interface content messages.
+
+Since this example is loaded as a plugin, it can be used in conjunction with the released VR-Forces application.
+
+How to Run the Example
+Usage
+In the Launcher, click the Plug-ins button to bring up the Plug-ins Selection dialog. Enable the plugin.
+
+To view the new behavior:
+
+Start VR-Forces GUI and SIM.
+There is no need to load an existing or create a new scenario.
+A new menu item - 'Send Interface Content Message...' will be created under the Simulation menu.
+Type in a message in the displayed Interface Content dialog, and press OK button to send the message.
+The SIM will receive the message and send an acknowledgement to the GUI.
+Upon receipt, both SIM and GUI will print a message to their console windows.
+Classes
+MyInterfaceContent	The Interface Content Message.
+Plugin Entry Points
+/*******************************************************************************
+** Copyright (c) 2021 MAK Technologies, Inc.
+** All rights reserved.
+*******************************************************************************/
+//Example includes
+#include "myInterfaceContent.h"
+//VR-Forces includes
+#include "vrfcgf/vrfPluginExtension.h"
+//VR-Forces includes
+#include "vrfcgf/cgf.h"
+#include "vrfcgf/factoryManager.h"
+#include "vrfMsgTransport/vrfMessageInterface.h"
+#include "vrfmsgs/simInterfaceMessage.h"
+#include "vrfutil/consoleCommandManager.h"
+//VR-Link includes
+#include <vlutil/vlPrint.h>
+#include <vl/exerciseConn.h>
+static DtSimulationAddress theSimulationAddress;
+static DtSimulationServices* theSimManager = nullptr;
+static int theOutgoingMessageNumber = 0;
+extern "C" {
+   //Callback function to print out incoming messages
+   static void messageCallback(DtSimMessage* msg, void* usr)
+   {
+      DtSimInterfaceMessage* ifMsg = (DtSimInterfaceMessage*)msg;
+      MyInterfaceContent* myContent =
+         (MyInterfaceContent*)ifMsg->interfaceContent();
+      if (myContent->ack())
+      {
+         //Don't send out a response as this could cause an infinite loop.
+      }
+      else if (ifMsg->sender() == theSimulationAddress)
+      {
+         //Don't send out a response to a message you sent.
+      }
+      else if (theSimManager)
+      {
+         DtString output;
+         myContent->printDataToString(output);
+         DtInfo("messageCallback received MyInterfaceContent:\n");
+         DtInfo("--------------------------------------------\n");
+         DtInfo("%s\n", output.string());
+         //Now, send out ack with receipt string
+     
+         //Send a test message 
+         MyInterfaceContent msg;
+         DtString response;
+         response = "Server Response (";
+         response += theSimulationAddress.string();
+         response += "): Received: ";
+         response += myContent->message();
+         msg.setMessage(response);
+         msg.setNumber(myContent->number());
+         msg.setAck(true);
+         theSimManager->createAndDeliverMessage(DtSimSendToAll, msg);
+      }
+   }
+   class DtPingCommand : public DtConsoleCommand
+   {
+   public:
+      ~DtPingCommand() { };
+      //Execute the command.
+      //\return True on success of the command.
+      virtual bool execute(const DtString& parameters)
+      {
+         MyInterfaceContent msg;
+         DtString messageToSend;
+         messageToSend = "Test message from (";
+         messageToSend += theSimulationAddress.string();
+         messageToSend += "): Sending Text: ";
+         messageToSend += parameters;
+         msg.setMessage(messageToSend);
+         msg.setNumber(theOutgoingMessageNumber++);
+         msg.setAck(false);
+         theSimManager->createAndDeliverMessage(DtSimSendToAll, msg);
+         return true;
+      }
+      //\return Some help text for the command.
+      virtual DtString help(const DtString& parameters)
+      {
+         return "Send a message with the given text.";
+      };
+      //\return True if this command should show up in the help list.
+      //If false, than this command will not be presented to the user.
+      virtual bool showInHelp() const { return true; };
+   };
+   static DtPingCommand* thePingCommand = new DtPingCommand();
+   DT_VRF_DLL_PLUGIN void DtUnloadVrfPlugin(DtCgf* cgf)
+   {
+      // Since the command console manager is cleaned up, and the console manager takes ownership of
+      // the memory, need to remove the console command else it will crash on exit during cleanup of DtCgf
+      DtConsoleCommandManager::globalConsoleCommandManager()->removeCommand(thePingCommand);
+      delete thePingCommand;
+      thePingCommand = nullptr;
+   }
+   DT_VRF_DLL_PLUGIN void DtPluginInformation(DtVrfPluginInformation& info)
+   {
+      info.pluginName = "interfaceContentSim";
+      info.pluginDescription = "This is an example of how to add a new interface message in the VRF back-end.";
+      info.pluginVersion = "1.00";
+      info.pluginCreator = "MAK Technologies";
+      info.pluginCreatorEmail = "sales@mak.com";
+      info.pluginContactWebPage = "www.mak.com";
+      info.pluginContactMailingAddress = "10 Fawcett Street, Suite 204, Cambridge, MA 02138 USA";
+      info.pluginContactPhone = "(617) 876 8085";
+   }
+   DT_VRF_DLL_PLUGIN bool DtInitializeVrfPlugin(DtCgf* cgf)
+   {          
+      //Register the creator for MyInterfaceContentType with the
+      //DtInterfaceContentFactory
+      cgf->factoryManager()->interfaceContentFactory()->addCreatorFcn(
+         MyInterfaceContentType, MyInterfaceContent::creator);  
+      return true;
+   }
+   //Now that everything is initialized, send out a test message
+   DT_VRF_DLL_PLUGIN bool DtPostInitializeVrfPlugin(DtCgf* cgf)
+   {
+      //Register for callbacks on MyInterfaceContent with the
+      //DtVrfMessageInterface
+      cgf->simulationServices()->messageInterface()->addMessageCallback(
+         MyInterfaceContentType, messageCallback, NULL);
+      theSimulationAddress = cgf->simulationServices()->messageAddress();
+      theSimManager = cgf->simulationServices();
+      DtConsoleCommandManager::globalConsoleCommandManager()->addCommand("ping",
+         thePingCommand);
+      return true;
+   }
+}
+Document ID: Generated on Wed Mar 27 22:49:11 EDT 2024 from SVN revision 264633
+Copyright © 2005-2024 MAK Technologies. All Rights Reserved (www.mak.com)
