@@ -59,10 +59,15 @@ Creates a single embedding vector database using the 'all-MiniLM-L6-v2'
 model from SentenceTransformer after reading each "compressed_file" from
 "your_compressed_file_directory"
 """
+
 if __name__== "__main__":
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    # Use 'all-MiniLM-L6-v2' if you are looking for embedding speed
+    # Use 'all-mpnet-base-v2' if you are looking for quality
+    model = SentenceTransformer('all-mpnet-base-v2')
     embeddings = GenerateAllEmbeddings("your_compressed_file_directory", model)
 ```
+
+For more Sentence Transformer Information - Refer to [Sentence Transformer Pretrained Models](https://www.sbert.net/docs/sentence_transformer/pretrained_models.html#semantic-search-models)
 
 ### Run Inferer
 
@@ -74,3 +79,102 @@ if __name__== "__main__":
 #               - Could be in Docker Container / Localhost
 python tcp_core.py 192.168.0.1 7060 11434
 ```
+
+## Preparation of Ollama Dependencies
+
+### Docker Containerization of Ollama Models
+
+```bash
+# Creating a Docker Container from a Docker Image
+# You are only required to run this command once in order to
+# construct a Docker Container
+docker create --gpus=all -v ollama:/root/.ollama -p 11434:11434 --name ollama_1 ollama/ollama
+```
+
+The way this works is as follows:
+- `--gpus=all` - Allows for access to all GPUs known to the OS. Applicable customizations are `--gpus=1` for example where we use the GPU located in Slot 1 (Refer to the Task Manager to see which GPU is located in the slot)
+- `-v ollama:/root/.ollama` - Creates a Docker Volume that may be shared across all Ollama instances. `ollama` refers to the folder created on the `Host Machine` and `/root/.ollama` refers to the folder created in the `Docker Container`.
+- `-p 11434:11434` - Specifies a port `11434 (left)` that is accessible on the `Host Machine` and `11434 (right)` that connects to the port `11434` on the `Host Machine`.<br>
+What this means is that we are able to create multiple instances of `Ollama Client` as long as we have enough VRAM / RAM by exposing multiple ports on our `Host Machine` to connect to an isolated `Ollama Client`. Refer back to `Run Inferer` on how both the `Docker Container` and the `Inferer` should be linked to support multiple clients.
+- `--name ollama_1` - Creates a Docker Container of name `ollama_1`
+- `ollama/ollama` - Pulls the [Official Docker Image for Ollama](https://hub.docker.com/r/ollama/ollama)
+- For more details and flags, refer to - [Official Docker Create Documentation](https://docs.docker.com/reference/cli/docker/container/create/)
+
+### Starting the Docker Container
+
+```bash
+# After creating the Docker Container in the previous step
+docker start ollama_1
+```
+
+### Pull a LLM Model from Ollama
+
+```bash
+# After Docker Container has been started in the previous step
+docker exec ollama_1 ollama pull <model_name>
+# Verify success - Should list all Ollama Models pulled across the 'ollama' volume
+docker exec ollama_1 ollama list
+```
+
+### Terminating the Docker Container
+
+```bash
+# Stop the Docker Container when done
+docker stop ollama_1
+```
+
+### Advanced Ollama Model Configurations
+
+In order to configure a LLM Model, we have to first set up a `Modelfile`.
+
+Preview an existing Model's Modelfile inside a Docker Container
+```bash
+# Access the volume as per normal, assuming that you used 'ollama pull <model_name>'
+docker exec ollama_1 ollama show --modelfile <model_name>
+```
+
+```bash
+# The Modelfile should look something similar to this
+FROM /root/.ollama/models/custom-gguf/Mistral-Nemo-Instruct-2407.Q8_0.gguf
+TEMPLATE """{{- range $i, $_ := .Messages }}
+{{- if eq .Role "user" }}
+{{- if and $.Tools (le (len (slice $.Messages $i)) 2) }}[AVAILABLE_TOOLS] {{ $.Tools }}[/AVAILABLE_TOOLS]
+{{- end }}[INST] {{ if and $.System (eq (len (slice $.Messages $i)) 1) }}{{ $.System }}
+
+{{ end }}{{ .Content }}[/INST]
+{{- else if eq .Role "assistant" }}
+{{- if .Content }} {{ .Content }}{{ if not (eq (len (slice $.Messages $i)) 1) }}</s>{{ end }}
+{{- else if .ToolCalls }}[TOOL_CALLS] [
+{{- range .ToolCalls }}{"name": "{{ .Function.Name }}", "arguments": {{ .Function.Arguments }}}
+{{- end }}]</s>
+{{- end }}
+{{- else if eq .Role "tool" }}[TOOL_RESULTS] {"content": {{ .Content }}} [/TOOL_RESULTS]
+{{- end }}
+{{- end }}"""
+PARAMETER stop [INST]
+PARAMETER stop [/INST]
+...
+```
+
+Simply copy the relevant sections of the Modelfile from the existing Model and create your own Modelfile using `vim`, or any other text editor. Subsequently, add any relevant `PARAMETERS` or `configurations` which you may need.
+
+[Official Documentation](https://github.com/ollama/ollama/blob/main/docs/modelfile.md#template)
+
+```bash
+# Add any additional PARAMETERS that you may need in order to customize the Model
+# E.g. num_ctx / temperature / top_k / top_p / min_p
+PARAMETER num_ctx 8192
+PARAMETER temperature 0
+
+SYSTEM You are a Senior Software Engineer that will provide technical support to his Engineers through code examples and theoretical knowledge. If you are unsure of how to provide an answer, you will reply with 'I am sorry but I am unsure of the topic' instead of fabricating an answer.
+...
+```
+
+In order to generate the actual `Model` from a `GGUF` file, 
+
+```bash
+# Creates a Model that can be referenced by Ollama
+docker exec ollama_1 ollama create <your-desired-model-name> -f ./<your-modelfile-path>
+```
+
+Complete documentation for customizing [Ollama Modelfiles](https://github.com/ollama/ollama/blob/main/docs/modelfile.md#template)

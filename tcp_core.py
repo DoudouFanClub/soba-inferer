@@ -9,6 +9,7 @@ import os
 from ollama import AsyncClient
 from sentence_transformers import SentenceTransformer
 from custom_embedder import GenerateAllEmbeddings, KnnSearch
+import pickle
 
 # Tcp Server to receive and pass out the llm response
 class TcpServer:
@@ -16,7 +17,7 @@ class TcpServer:
         self.host = host
         self.port = port
         self.server = None
-        self.model = None
+        self.model = SentenceTransformer('sentence-transformers/all-mpnet-base-v2')
         self.embeddings = None
         self.substring = "<doudousmacksoba>"
         self.async_client = AsyncClient("localhost:" + ollama_port)
@@ -55,10 +56,17 @@ class TcpServer:
         prompt_index = msg.rfind('"content":')
         # shift past content:
         prompt_index += 10
-        # remove the special characters from behind
-        response = await self.async_client.generate(model="llama3-temp0-Q6", prompt=msg[prompt_index:len(msg)-2], system="Provide ONLY a single word response of Yes or No, Yes if you are able to provide an accurate and full answer or No if you are unable to provide an answer", stream=False)
 
-        return False if response['response'] == "Yes" else True
+        _system_prompt = """Provide ONLY a single word response of Yes or No.
+        Respond with Yes ONLY if you are able to provide an accurate and full answer and you are ABSOLUTELY CERTAIN.
+        Respond with No otherwise."""
+
+        # remove the special characters from behind
+        response = await self.async_client.generate(model="llama3-temp0-Q6", prompt=msg[prompt_index:len(msg)-2], system=_system_prompt, stream=False)
+
+        print("Requires rag response: ", response['response'])
+
+        return True if response['response'] == "No" else False
     
     def display_ollama_performance(self, part):
         token_count = part['eval_count']
@@ -85,7 +93,7 @@ class TcpServer:
             # Remove starting brace "{" and encode user prompt for knn
             msg = msg[1:]
             prompt_index = msg.rfind('"content":')
-            question_embedding = model.encode([msg[prompt_index:len(msg)-2]])
+            question_embedding = self.model.encode([msg[prompt_index:len(msg)-2]])
             best_matches = KnnSearch(question_embedding, all_embeddings, k=5) # Play with this value, higher seems to result in inaccurate results
 
             # Construct the embedding text
@@ -105,8 +113,6 @@ class TcpServer:
 
             System Prompt: """
             sys_prompt_str = '[{"role": "system", "content": "Try your best to answer the questions with your own knowledge and the context of the conversation, only if that is not possible then use the following information:' + sourcetext + '"},'
-            #sys_prompt_str = '[{"role": "system", "content": "' + repr(_system_prompt)[1:-1] + sourcetext + '"},'
-            #print("Updated system prompt message: ", sys_prompt_str)
             msg = sys_prompt_str + msg
             print("Concatenated message before json:\n", msg)
 
@@ -134,7 +140,6 @@ class TcpServer:
             await self.server.serve_forever()
 
 if __name__== "__main__":
-    model = SentenceTransformer('all-MiniLM-L6-v2')
     # needed for first run
     #nltk.download('punkt')
     def validate_ip(ip):
@@ -148,8 +153,11 @@ if __name__== "__main__":
         print("Invalid IP address", sys.argv[1])
         exit()
     svr = TcpServer(sys.argv[1], sys.argv[2], sys.argv[3])
-    svr.model = model
-    all_embeddings = GenerateAllEmbeddings(os.path.dirname(__file__) + '\\compressed\\', model)
+
+    all_embeddings = ""
+    with open(os.path.dirname(__file__) + '\\embeddings.pkl', 'rb') as f:
+        all_embeddings = pickle.load(f)
+    
     svr.embeddings = all_embeddings
     print("Server started")
     asyncio.run(svr.run())

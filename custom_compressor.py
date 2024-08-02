@@ -1,8 +1,11 @@
 import os
+import re
 import glob
 import nltk
 import ollama
 import pymupdf
+import unicodedata
+from pathlib import Path
 from nltk.tokenize import sent_tokenize
 
 def FindValidFilesInDirectory(directory):
@@ -20,18 +23,35 @@ def GetPriorFolderPath(root_dir, file_dir):
 # Summarize the text provided without losing any core information and keep all code examples, and do not make any assumptions not within the text  |  1000 words
 def CompressChunk(model_name, page_data):
 
-    SupportingPrompt = 'Please provide a concise and accurate summary of the provided text. Specifically, I would like you to: (1) Preserve the core information, ESPECIALLY code examples (2) Avoid adding any unnecessary information or opinions'
-    # "Summarize the text provided without losing any core information, especially code examples: "
-    response = ollama.chat(
+    _system_prompt = """I have a series of text chunks extracted from a MAK RTI User Guide Document, and this is only a single portion.
+    Can you provide me with a summary that keeps all the key points without losing too much information:
+    {}"""
+
+    response = ollama.generate(
         model=model_name,
-        messages=[{'role': 'user', 'content': 'Summarize the text provided without losing any core information and keep all code examples, and do not make any assumptions not within the text' + page_data}],
-        stream=False,
+        prompt=_system_prompt.format(page_data),
+        stream=False
     )
-    #print(response['message']['content'])
-    return response['message']['content']
+
+    _supporting_prompt = """From this original text chunk:
+    {}
+
+    Are there any missing key points or descriptions that are not included within the summary below? If so, could merge the missing points into the existing summary below.
+    If the sentences are too long, feel free to separate them into bullet points with additional description behind the bullet point.
+    Also, remove any unnecessary text/headers that was not included within the text chunk provided, and do not tell me which points u have added or removed.
+    {}"""
+
+    updated_response = ollama.generate(
+        model=model_name,
+        prompt=_supporting_prompt.format(page_data, response['response']),
+        stream=False
+    )
+
+    print(updated_response['response'])
+    return updated_response['response']
 
 
-def CompressAndStoreTextData(data, outdir, outfile, chunk_len = 800, write_type = 'w'):
+def CompressAndStoreTextData(data, outdir, outfile, chunk_len = 600, write_type = 'w'):
         chunk = []
         word_count = 0
         sentences = sent_tokenize(data)
@@ -39,15 +59,22 @@ def CompressAndStoreTextData(data, outdir, outfile, chunk_len = 800, write_type 
         for i, sentence in enumerate(sentences):
             words = len(sentence.split())
             if word_count + words <= chunk_len:
-                chunk.append(sentence)
+                chunk.append(unicodedata.normalize('NFKD', sentence).encode('ascii', errors='ignore').decode('ascii'))
                 word_count += words
             else:
+                # Create folder if it does not yet exist
+                output_file = Path(outdir + outfile)
+                output_file.parent.mkdir(parents=True, exist_ok=True)
+
                 with open(outdir + outfile, write_type) as out_text_doc:
                     long_sentence = ' '.join(chunk)
-                    print('\nLong Sentence:\n' + long_sentence)
-                    compressed_text = CompressChunk('Meta-Llama-3-8B-Instruct-Temp0.Q6_K:latest', long_sentence) # llama3:8b-instruct-q6_K    |    Meta-Llama-3-8B-Instruct-Temp0.Q6_K:latest
+
+                    print('\nLong Sentence:\n' + long_sentence + "\n\n")
+
+                    compressed_text = CompressChunk('mistral-nemo-Q8-temp0', long_sentence) # llama3:8b-instruct-q6_K    |    Meta-Llama-3-8B-Instruct-Temp0.Q6_K:latest    |    mistral-nemo-Q6-temp0
                     actual_compressed_text = compressed_text.split('\n')[2:]
                     compressed_text = ('\n'.join(actual_compressed_text))
+                    compressed_text = unicodedata.normalize('NFKD', compressed_text).encode('ascii', errors='ignore').decode('ascii')
                     out_text_doc.write(compressed_text + '\n\n')
                     chunk = [sentence]
                     word_count = words
@@ -57,25 +84,25 @@ def CompressAndStoreTextData(data, outdir, outfile, chunk_len = 800, write_type 
         if chunk:
             with open(outdir + outfile, write_type) as out_text_doc:
                 long_sentence = ' '.join(chunk)
-                print('\n[FINAL] Long Sentence:\n' + long_sentence)
-                compressed_text = CompressChunk('llama3:8b-instruct-q6_K', long_sentence)
+
+                print('\nLong Sentence:\n' + long_sentence + "\n\n")
+
+                compressed_text = CompressChunk('mistral-nemo-Q8-temp0', long_sentence)
                 actual_compressed_text = compressed_text.split('\n')[2:]
                 compressed_text = ('\n'.join(actual_compressed_text))
+                compressed_text = unicodedata.normalize('NFKD', compressed_text).encode('ascii', errors='ignore').decode('ascii')
                 out_text_doc.write(compressed_text + '\n\n')
                 out_text_doc.close()
 
-        out_text_doc.close()
 
-
-def CompressPdf(filename, outdir):
+def CompressPdf(filename, outdir, skip_pages):
     data = ''
     input_doc = pymupdf.open(filename)
     
-    for page in input_doc:
-        data += page.get_text() + '\n'
-
-    for i in range (input_doc.page_count):
-        data += input_doc.load_page(i).get_text()
+    for i, page in enumerate(input_doc):
+        if i <= skip_pages:
+            continue
+        data += unicodedata.normalize('NFKD', page.get_text()).encode('ascii', errors='ignore').decode('ascii') + '\n'
 
     out_file_name = 'compressed_' + os.path.basename(filename).split('.')[0] + '.txt'
     CompressAndStoreTextData(data, outdir, out_file_name)
@@ -95,14 +122,17 @@ def CompressTxt(filename, outdir):
 def GenerateCompressedFiles(directory_to_compress):
     file_list = FindValidFilesInDirectory(directory_to_compress)
 
+    print("List of files in listed directory: ", file_list)
+
     for filename in file_list:
         filename_postfix = filename.split(".")[1]
         leading_folder_dir = GetPriorFolderPath(directory_to_compress, filename)
+        print("Currently Compressing: ", filename)
         if filename_postfix == 'txt':
             CompressTxt(filename, os.path.dirname(__file__) + '\\compressed\\' + leading_folder_dir + "\\")
         elif filename_postfix == 'pdf':
-            CompressPdf(filename, os.path.dirname(__file__) + '\\compressed\\' + leading_folder_dir + "\\")
+            CompressPdf(filename, os.path.dirname(__file__) + '\\compressed\\' + leading_folder_dir + "\\", 15)
 
 
-
-#GenerateCompressedFiles(os.path.dirname(__file__) + "\\data")
+if __name__ == "__main__":
+    GenerateCompressedFiles(os.path.dirname(__file__) + "\\data")
