@@ -1,15 +1,17 @@
-import json
-import asyncio
-import socket
-import sys
 import re
 import os
-# need for first runn
-# import nltk 
+import sys
+import json
+import pickle
+import socket
+import asyncio
 from ollama import AsyncClient
 from sentence_transformers import SentenceTransformer
-from custom_embedder import GenerateAllEmbeddings, KnnSearch
-import pickle
+from utility import KnnSearch, FindValidFilesInDirectory
+
+# Need for first run
+# import nltk
+
 
 # Tcp Server to receive and pass out the llm response
 class TcpServer:
@@ -91,7 +93,7 @@ class TcpServer:
             print("User's prompt requires RAG")
 
             # Remove starting brace "{" and encode user prompt for knn
-            msg = msg[1:]
+            #msg = msg[1:]
             prompt_index = msg.rfind('"content":')
             question_embedding = self.model.encode([msg[prompt_index:len(msg)-2]])
             best_matches = KnnSearch(question_embedding, all_embeddings, k=5) # Play with this value, higher seems to result in inaccurate results
@@ -101,22 +103,14 @@ class TcpServer:
             for i, (index, source_text) in enumerate(best_matches, start=1):
                 sourcetext += f"{i}. Index: {index}, Source Text: {source_text}"
             
-            # Add on the system prompt to the front of the msg
-            _system_prompt = """Try your best to answer the question with your own knowledge and the context of the conversation before referencing the System Prompt section.
-            Follow the rules listed below when providing a response.
-
-            Rules:
-            1) If the question includes a request for code, provide a code block directly from the System Prompt section.
-            2) If you do not have the information to a question, just say this - Hmm, I'm not too sure. Do not make up an answer.
-            3) If the question includes a request for text information, attempt to answer the question with the System Prompt.
-            4) If you have information on where the code example or text information was obtained from, provide it at the end of the response.
-
-            System Prompt: """
-            sys_prompt_str = '[{"role": "system", "content": "Try your best to answer the questions with your own knowledge and the context of the conversation, only if that is not possible then use the following information:' + sourcetext + '"},'
-            msg = sys_prompt_str + msg
-            print("Concatenated message before json:\n", msg)
+            # # Add on the system prompt to the front of the msg
+            # sys_prompt_str = '[{"role": "system", "content": "Only use the provided context to answer the question. Context: ' + sourcetext + '"},'
+            # msg = sys_prompt_str + msg
+            # print("Concatenated message before json:\n", msg)
 
         data = json.loads(msg)
+        data[-1]['content'] = f'Using this data: {sourcetext}. Respond to this prompt: {compressed_prompt}'
+        print("Concatenated message after updating:\n", data)
 
         # Disabling Nagle's algorithm for the socket
         writer.get_extra_info('socket').setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -154,9 +148,12 @@ if __name__== "__main__":
         exit()
     svr = TcpServer(sys.argv[1], sys.argv[2], sys.argv[3])
 
-    all_embeddings = ""
-    with open(os.path.dirname(__file__) + '\\embeddings.pkl', 'rb') as f:
-        all_embeddings = pickle.load(f)
+    all_embeddings = []
+    pkl_list = FindValidFilesInDirectory(os.path.dirname(__file__) + '\\embedding')
+    for pkl_file in pkl_list:
+        with open(pkl_file, 'rb') as f:
+            all_embeddings.append(pickle.load(f))
+            f.close()
     
     svr.embeddings = all_embeddings
     print("Server started")

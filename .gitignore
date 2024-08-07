@@ -166,3 +166,4 @@ cython_debug/
 data/
 compressed/
 spare_data/
+embedding/
