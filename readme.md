@@ -175,6 +175,7 @@ In order to generate the actual `Model` from a `GGUF` file,
 ```bash
 # Creates a Model that can be referenced by Ollama
 docker exec ollama_1 ollama create <your-desired-model-name> -f ./<your-modelfile-path>
+# docker exec -it ollama_1 ollama create Mistral-Nemo-Instruct-2047-Q6-Ctx8192 -f ./root/.ollama/models/custom-gguf/Modelfile
 ```
 
 Complete documentation for customizing [Ollama Modelfiles](https://github.com/ollama/ollama/blob/main/docs/modelfile.md#template)
