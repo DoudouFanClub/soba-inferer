@@ -73,10 +73,10 @@ class TcpServer:
         {}
         Standalone Question:"""
 
-        chat_history = "\n".join(["{}: {}".format(m["role"], m["content"]) for m in msg[:-1]])
+        chat_history = "\n".join(["{}: {}".format(m["role"], m["content"]) for m in msg[:-1] if m["role"] == "user"])
         follow_up_question = "{}: {}".format(msg[-1]["role"], msg[-1]["content"])
 
-        response = await self.async_client.generate(model="llama3-temp0-Q6", prompt=_question_template.format(chat_history, follow_up_question), stream=False)
+        response = await self.async_client.generate(model="Mistral-Nemo-Instruct-2047-Q6-Ctx4096", prompt=_question_template.format(chat_history, follow_up_question), stream=False, keep_alive="15m")
         parts = response['response'].split(":\n\n")
         return parts[1] if len(parts) > 1 else response['response']
 
@@ -98,7 +98,7 @@ class TcpServer:
         Respond with Yes ONLY if you are able to provide an accurate and full answer and you are ABSOLUTELY CERTAIN.
         Respond with No otherwise."""
 
-        response = await self.async_client.generate(model="llama3-temp0-Q6", prompt=msg[prompt_index:len(msg)-2], system=_system_prompt, stream=False)
+        response = await self.async_client.generate(model="llama3-temp0-Q6", prompt=msg[prompt_index:len(msg)-2], system=_system_prompt, stream=False, keep_alive="15m")
         print("LLM is capable of providing an accurate response: ", response['response'])
         return True if response['response'] == "No" else False
     
@@ -131,40 +131,16 @@ class TcpServer:
         # Compress the entire conversation + latest user prompt into a single prompt
         compressed_prompt = await self.compress_convo(msg)
 
-        print("Compressed prompt: ", compressed_prompt, "\n")
-
-        # Check if RAG is required based on the latest compressed prompt
-        requires_rag = await self.requires_rag(compressed_prompt)
-        if requires_rag:
-            # Remove starting brace "{" and encode user prompt for knn
-            #msg = msg[1:]
-            prompt_index = msg.rfind('"content":')
-            question_embedding = self.model.encode([msg[prompt_index:len(msg)-2]])
-            #best_matches = KnnSearch(question_embedding, all_embeddings, k=5) # Play with this value, higher seems to result in inaccurate results
-            best_matches = SemanticSearch(question_embedding, self.embeddings, 5)
-
-            # Construct the embedding text
-            sourcetext = ""
-            for i, (source_text, source_location) in enumerate(best_matches, start=1):
-                #sourcetext += f"{i}. Index: {index}, Source Text: {source_text}, Source Location: {source_location}"
-                sourcetext += f"{i}. Source Text: {source_text}, Source Location: {source_location}"
-            
-            # # Add on the system prompt to the front of the msg
-            # sys_prompt_str = '[{"role": "system", "content": "Only use the provided context to answer the question. Context: ' + sourcetext + '"},'
-            # msg = sys_prompt_str + msg
-            # print("Concatenated message before json:\n", msg)
-
         data = json.loads(msg)
-        if requires_rag:
-            print("Received Message: ", msg)
-            data[-1]['content'] = f'Using this data: {sourcetext}. Respond to this prompt: {compressed_prompt}. The response should also contain the Source Location where the response was obtained from.'
-        print("Concatenated message after updating:\n", data)
 
         # Disabling Nagle's algorithm for the socket
         writer.get_extra_info('socket').setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
+        # Replace the user's prompt with compressed_prompt which is the "summarized" version with context of the previous questions
+        data[-1]['content'] = compressed_prompt
+
         # Stream the LLM response
-        async for part in await self.async_client.chat(model='Mistral-Nemo-Instruct-2047-Q6-Ctx8192', messages=data, stream=True, keep_alive="15m"):
+        async for part in await self.async_client.chat(model='Mistral-Nemo-Instruct-2047-Q6-Ctx4096', messages=data, stream=True, keep_alive="15m"):
             temp = part['message']['content']
             writer.write(temp.encode('utf-8'))
             await writer.drain()
@@ -186,7 +162,7 @@ class TcpServer:
 
 if __name__== "__main__":
     # needed for first run
-    #nltk.download('punkt')
+    # nltk.download('punkt')
     def validate_ip(ip):
         ip_pattern = r"^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
         if re.match(ip_pattern, ip):
